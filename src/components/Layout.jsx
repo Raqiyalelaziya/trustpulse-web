@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { api } from '../api'
 import { Home, Search, PlusCircle, User, Store, Menu, X, ShieldAlert, Trophy } from 'lucide-react'
-import shieldLogo from '../assets/shield.jfif'
+import shieldLogo from '../assets/shield.png'
  
 export default function Layout({ children }) {
   const location   = useLocation()
