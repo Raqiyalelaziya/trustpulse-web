@@ -1,14 +1,14 @@
 // src/api/base44Client.js
 // Replaces the Base44 SDK with direct Flask API calls.
 // All methods are self-contained — no dependency on ../api needed.
-
+ 
 const BASE_URL = 'https://trustpulse-api.onrender.com'
-
+ 
 const getToken = () => localStorage.getItem('trustpulse_token')
 const getStoredUser = () => {
   try { return JSON.parse(localStorage.getItem('trustpulse_user') || 'null') } catch { return null }
 }
-
+ 
 const authFetch = async (path, options = {}) => {
   const token = getToken()
   return fetch(`${BASE_URL}${path}`, {
@@ -20,7 +20,7 @@ const authFetch = async (path, options = {}) => {
     },
   })
 }
-
+ 
 // Map a trust_score (0–100) to a human-readable trust level
 const trustLevelFromScore = (score) => {
   if (score >= 75) return 'High'
@@ -28,7 +28,7 @@ const trustLevelFromScore = (score) => {
   if (score >= 25) return 'Low'
   return 'New'
 }
-
+ 
 // Normalise a shop object so pages get consistent field names
 const normaliseShop = (s) => ({
   ...s,
@@ -38,7 +38,7 @@ const normaliseShop = (s) => ({
   verified_review_count: s.verified_review_count || 0,
   flagged: s.flagged || false,
 })
-
+ 
 // Normalise a review object so pages get consistent field names
 const normaliseReview = (r) => ({
   ...r,
@@ -53,7 +53,7 @@ const normaliseReview = (r) => ({
   likes: r.likes || 0,
   comments_count: r.comments_count || 0,
 })
-
+ 
 // Normalise a user object so pages get consistent field names
 const normaliseUser = (u) => ({
   ...u,
@@ -68,7 +68,7 @@ const normaliseUser = (u) => ({
   profile_image: u.profile_image || null,
   role: u.role || 'user',
 })
-
+ 
 export const base44 = {
   // ─── AUTH ────────────────────────────────────────────────────────────────
   auth: {
@@ -79,14 +79,14 @@ export const base44 = {
         return res.ok
       } catch { return false }
     },
-
+ 
     me: async () => {
       const res = await authFetch('/auth/me')
       if (!res.ok) throw new Error('Not authenticated')
       const data = await res.json()
       return normaliseUser(data)
     },
-
+ 
     // Update current user's profile. Tries PATCH /auth/me, falls back to localStorage.
     updateMe: async (updates) => {
       try {
@@ -106,7 +106,7 @@ export const base44 = {
       localStorage.setItem('trustpulse_user', JSON.stringify(merged))
       return merged
     },
-
+ 
     login: async (email, password) => {
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
@@ -115,7 +115,7 @@ export const base44 = {
       })
       return res.json()
     },
-
+ 
     signup: async (data) => {
       const res = await fetch(`${BASE_URL}/auth/signup`, {
         method: 'POST',
@@ -124,19 +124,19 @@ export const base44 = {
       })
       return res.json()
     },
-
+ 
     logout: (redirectPath) => {
       localStorage.removeItem('trustpulse_token')
       localStorage.removeItem('trustpulse_user')
       window.location.href = redirectPath || '/'
     },
-
+ 
     redirectToLogin: (returnPath) => {
       const qs = returnPath ? `?redirect=${encodeURIComponent(returnPath)}` : ''
       window.location.href = `/login${qs}`
     },
   },
-
+ 
   // ─── ENTITIES ────────────────────────────────────────────────────────────
   entities: {
     Shop: {
@@ -148,7 +148,7 @@ export const base44 = {
           return shops.slice(0, limit ?? shops.length)
         } catch { return [] }
       },
-
+ 
       filter: async (filters, _sort, limit) => {
         try {
           const res = await fetch(`${BASE_URL}/shops`)
@@ -159,7 +159,7 @@ export const base44 = {
           return shops.slice(0, limit ?? shops.length)
         } catch { return [] }
       },
-
+ 
       get: async (id) => {
         try {
           const res = await fetch(`${BASE_URL}/shops/${id}`)
@@ -167,7 +167,7 @@ export const base44 = {
           return normaliseShop(data.shop || data)
         } catch { return null }
       },
-
+ 
       create: async (body) => {
         try {
           const res = await authFetch('/shops', { method: 'POST', body: JSON.stringify(body) })
@@ -175,7 +175,7 @@ export const base44 = {
         } catch { /* fall through */ }
         return body
       },
-
+ 
       update: async (id, body) => {
         try {
           const res = await authFetch(`/shops/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
@@ -183,12 +183,12 @@ export const base44 = {
         } catch { /* fall through */ }
         return body
       },
-
+ 
       delete: async (id) => {
         try { await authFetch(`/shops/${id}`, { method: 'DELETE' }) } catch { /* silent */ }
       },
     },
-
+ 
     Review: {
       list: async (_sort, limit) => {
         try {
@@ -199,7 +199,7 @@ export const base44 = {
           return reviews.slice(0, limit ?? reviews.length)
         } catch { return [] }
       },
-
+ 
       filter: async (filters, _sort, limit) => {
         try {
           const params = new URLSearchParams()
@@ -220,12 +220,12 @@ export const base44 = {
           return reviews.slice(0, limit ?? reviews.length)
         } catch { return [] }
       },
-
+ 
       create: async (body) => {
         const res = await authFetch('/reviews', { method: 'POST', body: JSON.stringify(body) })
         return res.json()
       },
-
+ 
       update: async (id, body) => {
         try {
           const res = await authFetch(`/reviews/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
@@ -233,12 +233,12 @@ export const base44 = {
         } catch { /* fall through */ }
         return body
       },
-
+ 
       delete: async (id) => {
         try { await authFetch(`/reviews/${id}`, { method: 'DELETE' }) } catch { /* silent */ }
       },
     },
-
+ 
     User: {
       list: async (_sort, limit) => {
         try {
@@ -252,7 +252,7 @@ export const base44 = {
       me: async () => base44.auth.me(),
       updateMyUserData: async (data) => base44.auth.updateMe(data),
     },
-
+ 
     Complaint: {
       list: async (_sort, limit) => {
         try {
@@ -282,14 +282,29 @@ export const base44 = {
         return body
       },
     },
-
+ 
     Comment: {
       list: async () => [],
-      filter: async () => [],
-      create: async (data) => data,
+      filter: async (filters, _sort, limit) => {
+        try {
+          const params = new URLSearchParams()
+          if (filters?.review_id) params.set('review_id', filters.review_id)
+          const res = await fetch(`${BASE_URL}/comments?${params.toString()}`)
+          if (!res.ok) return []
+          const data = await res.json()
+          return Array.isArray(data) ? data : []
+        } catch { return [] }
+      },
+      create: async (body) => {
+        try {
+          const res = await authFetch('/comments', { method: 'POST', body: JSON.stringify(body) })
+          if (res.ok) return res.json()
+        } catch { /* fall through */ }
+        return body
+      },
     },
   },
-
+ 
   // ─── INTEGRATIONS ────────────────────────────────────────────────────────
   integrations: {
     Core: {
