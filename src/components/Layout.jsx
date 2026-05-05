@@ -1,21 +1,22 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { api } from '../api'
-import { Home, Search, PlusCircle, User, Store, Menu, X, ShieldAlert, Trophy, ShieldCheck } from 'lucide-react'
-
+import { Home, Search, PlusCircle, User, Store, Menu, X, ShieldAlert, Trophy } from 'lucide-react'
+import shieldLogo from '../assets/shield.jfif'
+ 
 export default function Layout({ children }) {
   const location   = useLocation()
   const [user,       setUser]       = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hoveredNav, setHoveredNav] = useState(null)
-
+ 
   useEffect(() => {
     const token = localStorage.getItem('trustpulse_token')
     if (token) {
       api.me().then(me => setUser(me)).catch(() => {})
     }
   }, [location.pathname])
-
+ 
   const navItems = [
     { path: '/',           icon: Home,       label: 'Home',      color: '#60a5fa' },
     { path: '/search',     icon: Search,     label: 'Explore',   color: '#a78bfa' },
@@ -24,53 +25,36 @@ export default function Layout({ children }) {
     { path: '/dashboard',  icon: Trophy,     label: 'Dashboard', color: '#fbbf24' },
     { path: '/profile',    icon: User,       label: 'Profile',   color: '#f472b6' },
   ]
-
+ 
   const active = (path) => location.pathname === path
-
-  // UAE Shield Logo — red vertical bar + green/white/black stripes
-  const UAEShield = () => (
-    <div className="relative h-9 w-9 rounded-xl overflow-hidden shadow-lg flex-shrink-0" style={{ border: '1.5px solid rgba(255,255,255,0.15)' }}>
-      {/* Shield background — UAE flag layout */}
-      <div className="absolute inset-0 flex">
-        {/* Red left bar */}
-        <div className="w-[35%] h-full" style={{ background: '#FF0000' }} />
-        {/* Right stripes */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1" style={{ background: '#00732F' }} />
-          <div className="flex-1 bg-white" />
-          <div className="flex-1 bg-black" />
-        </div>
-      </div>
-      {/* Shield icon overlay */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <ShieldCheck className="h-5 w-5 text-white drop-shadow-md" />
-      </div>
-    </div>
-  )
-
+ 
   return (
     <div className="min-h-screen bg-background">
-
+ 
       {/* ── Desktop Header ─────────────────────────────────────────── */}
       <header className="hidden md:block sticky top-0 z-50"
         style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-
+ 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 shrink-0 group">
-            <UAEShield />
+            <img
+              src={shieldLogo}
+              alt="TrustPulse"
+              className="h-14 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
+            />
             <div className="flex flex-col leading-none">
               <span className="font-heading font-black text-white text-lg tracking-tight">TrustPulse</span>
               <span className="text-[9px] text-white/30 uppercase tracking-widest font-semibold">UAE Verified Reviews</span>
             </div>
           </Link>
-
+ 
           {/* Nav */}
           <nav className="flex items-center gap-0.5">
             {navItems.map((item) => {
-              const Icon     = item.icon
-              const isActive = active(item.path)
+              const Icon      = item.icon
+              const isActive  = active(item.path)
               const isHovered = hoveredNav === item.path
               return (
                 <Link
@@ -80,24 +64,15 @@ export default function Layout({ children }) {
                   onMouseLeave={() => setHoveredNav(null)}
                   className="relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium"
                   style={{
-                    color: isActive
-                      ? item.color
-                      : isHovered
-                        ? item.color
-                        : 'rgba(255,255,255,0.45)',
-                    background: isActive
-                      ? `${item.color}18`
-                      : isHovered
-                        ? `${item.color}12`
-                        : 'transparent',
+                    color: isActive ? item.color : isHovered ? item.color : 'rgba(255,255,255,0.45)',
+                    background: isActive ? `${item.color}18` : isHovered ? `${item.color}12` : 'transparent',
                     transform: isHovered && !isActive ? 'translateY(-1px)' : 'none',
                   }}
                 >
                   <Icon className="h-4 w-4 transition-all duration-200" />
                   <span className="hidden lg:inline">{item.label}</span>
                   {isActive && (
-                    <span
-                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
+                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
                       style={{ background: item.color }}
                     />
                   )}
@@ -120,7 +95,7 @@ export default function Layout({ children }) {
               </Link>
             )}
           </nav>
-
+ 
           {/* Auth */}
           <div className="flex items-center gap-3 shrink-0">
             {user ? (
@@ -183,7 +158,7 @@ export default function Layout({ children }) {
             )}
           </div>
         </div>
-
+ 
         {/* UAE accent strip */}
         <div className="h-px w-full flex">
           <div className="flex-1" style={{ background: 'rgba(255,0,0,0.5)' }} />
@@ -191,14 +166,14 @@ export default function Layout({ children }) {
           <div className="flex-1" style={{ background: 'rgba(0,115,47,0.5)' }} />
         </div>
       </header>
-
+ 
       {/* ── Mobile Header ──────────────────────────────────────────── */}
       <header className="md:hidden sticky top-0 z-50"
         style={{ background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         <div className="px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <UAEShield />
+          <Link to="/" className="flex items-center gap-2">
+            <img src={shieldLogo} alt="TrustPulse" className="h-12 w-auto object-contain" />
             <span className="font-heading font-black text-white text-base">TrustPulse</span>
           </Link>
           <div className="flex items-center gap-2">
@@ -222,14 +197,14 @@ export default function Layout({ children }) {
             </button>
           </div>
         </div>
-
+ 
         {/* UAE strip */}
         <div className="h-px flex">
           <div className="flex-1" style={{ background: 'rgba(255,0,0,0.5)' }} />
           <div className="flex-1" style={{ background: 'rgba(255,255,255,0.15)' }} />
           <div className="flex-1" style={{ background: 'rgba(0,115,47,0.5)' }} />
         </div>
-
+ 
         {mobileOpen && (
           <div className="absolute top-full left-0 right-0 p-4 space-y-1 shadow-2xl z-50"
             style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
@@ -268,12 +243,12 @@ export default function Layout({ children }) {
           </div>
         )}
       </header>
-
+ 
       {/* ── Content ────────────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 pb-24 md:pb-10">
         {children}
       </main>
-
+ 
       {/* ── Mobile Bottom Nav ──────────────────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-2"
         style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.06)' }}
