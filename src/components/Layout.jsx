@@ -67,7 +67,7 @@ export default function Layout({ children }) {
     if (token) {
       api.me().then(me => setUser(me)).catch(() => {})
     }
-  }, [location.pathname])
+  }, [])
 
   const navItems = [
     { path: '/',           icon: Home,       label: lang === 'ar' ? 'الرئيسية'   : 'Home',      color: '#60a5fa' },
