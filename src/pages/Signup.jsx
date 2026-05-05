@@ -26,7 +26,6 @@ export default function Signup() {
     if (loading) return
     setError('')
 
-    // Basic validation
     if (!form.full_name.trim()) { setError('Please enter your full name'); return }
     if (!form.email.trim())     { setError('Please enter your email'); return }
     if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
@@ -46,7 +45,7 @@ export default function Signup() {
       if (result.token) {
         localStorage.setItem('trustpulse_token', result.token)
         localStorage.setItem('trustpulse_user', JSON.stringify(result))
-        navigate('/dashboard')
+        navigate('/select-account-type')
       } else {
         setError('Signup failed — please try again')
         setLoading(false)
@@ -61,7 +60,6 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md space-y-6">
 
-        {/* Logo + flag */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
             <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
@@ -73,9 +71,7 @@ export default function Signup() {
           <p className="text-muted-foreground text-sm">UAE's most trusted shop review platform</p>
         </div>
 
-        {/* Card */}
         <div className="bg-card rounded-3xl border border-border/50 shadow-xl overflow-hidden">
-          {/* Top accent */}
           <div className="h-1 bg-gradient-to-r from-[#FF0000] via-white to-[#00732F]" />
 
           <div className="p-8 space-y-6">
@@ -84,7 +80,6 @@ export default function Signup() {
               <p className="text-muted-foreground text-sm mt-1">Join TrustPulse and start reviewing shops</p>
             </div>
 
-            {/* Error */}
             {error && (
               <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm font-medium">
                 {error}
@@ -92,7 +87,6 @@ export default function Signup() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Full name */}
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-foreground">Full Name</label>
                 <input
@@ -106,7 +100,6 @@ export default function Signup() {
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-foreground">Email</label>
                 <input
@@ -120,7 +113,6 @@ export default function Signup() {
                 />
               </div>
 
-              {/* Password */}
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-foreground">Password</label>
                 <div className="relative">
@@ -133,11 +125,8 @@ export default function Signup() {
                     required
                     autoComplete="new-password"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <button type="button" onClick={() => setShowPass(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                     {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -165,7 +154,6 @@ export default function Signup() {
           </div>
         </div>
 
-        {/* Trust note */}
         <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
           Your data is secure and never shared
