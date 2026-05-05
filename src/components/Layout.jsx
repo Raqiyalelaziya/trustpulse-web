@@ -1,24 +1,13 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { api } from '../api'
-import { Home, Search, PlusCircle, User, Store, Menu, X, ShieldAlert, Trophy } from 'lucide-react'
-
-function UAEFlag({ className = '' }) {
-  return (
-    <svg viewBox="0 0 60 30" className={className} xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0"  width="60" height="10" fill="#00732F" />
-      <rect x="0" y="10" width="60" height="10" fill="#FFFFFF" />
-      <rect x="0" y="20" width="60" height="10" fill="#000000" />
-      <rect x="0" y="0"  width="20" height="30" fill="#FF0000" />
-    </svg>
-  )
-}
+import { Home, Search, PlusCircle, User, Store, Menu, X, ShieldAlert, Trophy, ShieldCheck } from 'lucide-react'
 
 export default function Layout({ children }) {
-  const location    = useLocation()
-  const navigate    = useNavigate()
-  const [user,        setUser]        = useState(null)
-  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const location   = useLocation()
+  const [user,       setUser]       = useState(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [hoveredNav, setHoveredNav] = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem('trustpulse_token')
@@ -28,60 +17,106 @@ export default function Layout({ children }) {
   }, [location.pathname])
 
   const navItems = [
-    { path: '/',           icon: Home,       label: 'Home' },
-    { path: '/search',     icon: Search,     label: 'Explore' },
-    { path: '/add-shop',   icon: Store,      label: 'Add Shop' },
-    { path: '/add-review', icon: PlusCircle, label: 'Review' },
-    { path: '/dashboard',  icon: Trophy,     label: 'Dashboard' },
-    { path: '/profile',    icon: User,       label: 'Profile' },
+    { path: '/',           icon: Home,       label: 'Home',      color: '#60a5fa' },
+    { path: '/search',     icon: Search,     label: 'Explore',   color: '#a78bfa' },
+    { path: '/add-shop',   icon: Store,      label: 'Add Shop',  color: '#34d399' },
+    { path: '/add-review', icon: PlusCircle, label: 'Review',    color: '#f59e0b' },
+    { path: '/dashboard',  icon: Trophy,     label: 'Dashboard', color: '#fbbf24' },
+    { path: '/profile',    icon: User,       label: 'Profile',   color: '#f472b6' },
   ]
 
   const active = (path) => location.pathname === path
+
+  // UAE Shield Logo — red vertical bar + green/white/black stripes
+  const UAEShield = () => (
+    <div className="relative h-9 w-9 rounded-xl overflow-hidden shadow-lg flex-shrink-0" style={{ border: '1.5px solid rgba(255,255,255,0.15)' }}>
+      {/* Shield background — UAE flag layout */}
+      <div className="absolute inset-0 flex">
+        {/* Red left bar */}
+        <div className="w-[35%] h-full" style={{ background: '#FF0000' }} />
+        {/* Right stripes */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1" style={{ background: '#00732F' }} />
+          <div className="flex-1 bg-white" />
+          <div className="flex-1 bg-black" />
+        </div>
+      </div>
+      {/* Shield icon overlay */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <ShieldCheck className="h-5 w-5 text-white drop-shadow-md" />
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-background">
 
       {/* ── Desktop Header ─────────────────────────────────────────── */}
-      <header className="hidden md:block sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="hidden md:block sticky top-0 z-50"
+        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-              <span className="text-white font-black text-sm">T</span>
+          <Link to="/" className="flex items-center gap-3 shrink-0 group">
+            <UAEShield />
+            <div className="flex flex-col leading-none">
+              <span className="font-heading font-black text-white text-lg tracking-tight">TrustPulse</span>
+              <span className="text-[9px] text-white/30 uppercase tracking-widest font-semibold">UAE Verified Reviews</span>
             </div>
-            <span className="font-heading font-black text-lg">TrustPulse</span>
-            <UAEFlag className="w-6 h-3.5 rounded-sm overflow-hidden" />
           </Link>
 
           {/* Nav */}
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5">
             {navItems.map((item) => {
-              const Icon = item.icon
+              const Icon     = item.icon
+              const isActive = active(item.path)
+              const isHovered = hoveredNav === item.path
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  title={item.label}
-                  className={`flex items-center justify-center h-9 w-9 rounded-xl transition-all ${
-                    active(item.path)
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                  }`}
+                  onMouseEnter={() => setHoveredNav(item.path)}
+                  onMouseLeave={() => setHoveredNav(null)}
+                  className="relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium"
+                  style={{
+                    color: isActive
+                      ? item.color
+                      : isHovered
+                        ? item.color
+                        : 'rgba(255,255,255,0.45)',
+                    background: isActive
+                      ? `${item.color}18`
+                      : isHovered
+                        ? `${item.color}12`
+                        : 'transparent',
+                    transform: isHovered && !isActive ? 'translateY(-1px)' : 'none',
+                  }}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4 transition-all duration-200" />
+                  <span className="hidden lg:inline">{item.label}</span>
+                  {isActive && (
+                    <span
+                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
+                      style={{ background: item.color }}
+                    />
+                  )}
                 </Link>
               )
             })}
             {user?.role === 'admin' && (
               <Link
                 to="/admin"
-                title="Admin"
-                className={`flex items-center justify-center h-9 w-9 rounded-xl transition-all ${
-                  active('/admin') ? 'bg-destructive text-white' : 'text-muted-foreground hover:bg-secondary'
-                }`}
+                onMouseEnter={() => setHoveredNav('admin')}
+                onMouseLeave={() => setHoveredNav(null)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+                style={{
+                  color: active('/admin') || hoveredNav === 'admin' ? '#ef4444' : 'rgba(255,255,255,0.45)',
+                  background: active('/admin') ? 'rgba(239,68,68,0.15)' : hoveredNav === 'admin' ? 'rgba(239,68,68,0.08)' : 'transparent',
+                }}
               >
                 <ShieldAlert className="h-4 w-4" />
+                <span className="hidden lg:inline">Admin</span>
               </Link>
             )}
           </nav>
@@ -89,69 +124,130 @@ export default function Layout({ children }) {
           {/* Auth */}
           <div className="flex items-center gap-3 shrink-0">
             {user ? (
-              <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <div className="h-8 w-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <span className="text-sm font-black text-primary">
-                    {(user.full_name || user.email || '?')[0].toUpperCase()}
+              <Link
+                to="/profile"
+                onMouseEnter={() => setHoveredNav('profile-avatar')}
+                onMouseLeave={() => setHoveredNav(null)}
+                className="flex items-center gap-2.5 transition-all duration-200"
+                style={{ opacity: hoveredNav === 'profile-avatar' ? 1 : 0.85 }}
+              >
+                <div className="flex flex-col items-end">
+                  <span className="text-xs font-semibold text-white leading-none">
+                    {user.full_name?.split(' ')[0] || 'User'}
                   </span>
+                  <span className="text-[10px] text-white/30 mt-0.5">{user.trust_score || 0}% trust</span>
+                </div>
+                <div
+                  className="h-8 w-8 rounded-xl flex items-center justify-center font-black text-sm text-white transition-all duration-200"
+                  style={{
+                    background: hoveredNav === 'profile-avatar'
+                      ? 'linear-gradient(135deg, #00732F, #00c851)'
+                      : 'linear-gradient(135deg, #00732F, #00a845)',
+                    transform: hoveredNav === 'profile-avatar' ? 'scale(1.05)' : 'scale(1)',
+                  }}
+                >
+                  {(user.full_name || user.email || '?')[0].toUpperCase()}
                 </div>
               </Link>
             ) : (
               <div className="flex gap-2">
-                <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-secondary transition-colors">
+                <Link
+                  to="/login"
+                  onMouseEnter={() => setHoveredNav('login')}
+                  onMouseLeave={() => setHoveredNav(null)}
+                  className="text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200"
+                  style={{
+                    color: hoveredNav === 'login' ? 'white' : 'rgba(255,255,255,0.55)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: hoveredNav === 'login' ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  }}
+                >
                   Login
                 </Link>
-                <Link to="/signup" className="text-sm bg-primary text-primary-foreground px-4 py-1.5 rounded-xl hover:bg-primary/90 transition-colors font-semibold">
-                  Sign Up
+                <Link
+                  to="/signup"
+                  onMouseEnter={() => setHoveredNav('signup')}
+                  onMouseLeave={() => setHoveredNav(null)}
+                  className="text-sm font-bold px-4 py-2 rounded-xl transition-all duration-200 text-white"
+                  style={{
+                    background: hoveredNav === 'signup'
+                      ? 'linear-gradient(135deg, #005a25, #00a845)'
+                      : 'linear-gradient(135deg, #00732F, #00a845)',
+                    transform: hoveredNav === 'signup' ? 'translateY(-1px)' : 'none',
+                    boxShadow: hoveredNav === 'signup' ? '0 4px 15px rgba(0,115,47,0.4)' : 'none',
+                  }}
+                >
+                  Sign Up Free
                 </Link>
               </div>
             )}
           </div>
         </div>
+
+        {/* UAE accent strip */}
+        <div className="h-px w-full flex">
+          <div className="flex-1" style={{ background: 'rgba(255,0,0,0.5)' }} />
+          <div className="flex-1" style={{ background: 'rgba(255,255,255,0.15)' }} />
+          <div className="flex-1" style={{ background: 'rgba(0,115,47,0.5)' }} />
+        </div>
       </header>
 
       {/* ── Mobile Header ──────────────────────────────────────────── */}
-      <header className="md:hidden sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="md:hidden sticky top-0 z-50"
+        style={{ background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
         <div className="px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white font-black text-xs">T</span>
-            </div>
-            <span className="font-heading font-black">TrustPulse</span>
+          <Link to="/" className="flex items-center gap-2.5">
+            <UAEShield />
+            <span className="font-heading font-black text-white text-base">TrustPulse</span>
           </Link>
           <div className="flex items-center gap-2">
             {user ? (
               <Link to="/profile">
-                <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="text-xs font-black text-primary">
-                    {(user.full_name || '?')[0].toUpperCase()}
-                  </span>
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center font-black text-xs text-white"
+                  style={{ background: 'linear-gradient(135deg, #00732F, #00a845)' }}
+                >
+                  {(user.full_name || '?')[0].toUpperCase()}
                 </div>
               </Link>
             ) : (
-              <Link to="/login" className="text-xs text-primary font-semibold">Login</Link>
+              <Link to="/login" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>Login</Link>
             )}
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-1.5 rounded-lg transition-colors"
+              style={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.06)' }}
+            >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu dropdown */}
+        {/* UAE strip */}
+        <div className="h-px flex">
+          <div className="flex-1" style={{ background: 'rgba(255,0,0,0.5)' }} />
+          <div className="flex-1" style={{ background: 'rgba(255,255,255,0.15)' }} />
+          <div className="flex-1" style={{ background: 'rgba(0,115,47,0.5)' }} />
+        </div>
+
         {mobileOpen && (
-          <div className="absolute top-14 left-0 right-0 bg-background border-b border-border p-4 space-y-1 shadow-xl">
+          <div className="absolute top-full left-0 right-0 p-4 space-y-1 shadow-2xl z-50"
+            style={{ background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          >
             {navItems.map((item) => {
               const Icon = item.icon
+              const isActive = active(item.path)
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    active(item.path)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                  }`}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                  style={{
+                    color: isActive ? item.color : 'rgba(255,255,255,0.55)',
+                    background: isActive ? `${item.color}18` : 'transparent',
+                    border: isActive ? `1px solid ${item.color}30` : '1px solid transparent',
+                  }}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
@@ -162,10 +258,11 @@ export default function Layout({ children }) {
               <Link
                 to="/signup"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground mt-2"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white mt-2"
+                style={{ background: 'linear-gradient(135deg, #00732F, #00a845)' }}
               >
                 <PlusCircle className="h-4 w-4" />
-                Create Account
+                Create Free Account
               </Link>
             )}
           </div>
@@ -178,17 +275,19 @@ export default function Layout({ children }) {
       </main>
 
       {/* ── Mobile Bottom Nav ──────────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-t border-border/50 px-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-2"
+        style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      >
         <div className="flex items-center justify-around py-2">
           {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon
+            const isActive = active(item.path)
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${
-                  active(item.path) ? 'text-primary' : 'text-muted-foreground'
-                }`}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all"
+                style={{ color: isActive ? item.color : 'rgba(255,255,255,0.3)' }}
               >
                 <Icon className="h-5 w-5" />
                 <span className="text-[10px] font-medium">{item.label}</span>
