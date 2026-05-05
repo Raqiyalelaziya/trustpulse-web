@@ -1,86 +1,73 @@
-import { useState } from 'react';
+// src/components/shopowner/DashboardComplaints.jsx
+import { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
-const SAMPLE_COMPLAINTS = [
-  { id: 1, name: 'Noura M.',  initials: 'NM', days: '2 days ago', text: 'Item received was not as described. The color was completely different from the photo shown on Instagram.', resolved: false },
-  { id: 2, name: 'Ahmed A.',  initials: 'AA', days: '3 days ago', text: 'I paid for express delivery but the order arrived 10 days late with no updates.', resolved: false },
-  { id: 3, name: 'Reem A.',   initials: 'RA', days: '5 days ago', text: 'Delivery took 2 weeks instead of the promised 3 days. Issue resolved with a partial refund.', resolved: true },
-];
+const statusColor = {
+  open:        'bg-red-50 text-red-600 border-red-200',
+  in_progress: 'bg-amber-50 text-amber-600 border-amber-200',
+  resolved:    'bg-green-50 text-green-600 border-green-200',
+};
 
-export default function DashboardComplaints() {
-  const [complaints, setComplaints] = useState(SAMPLE_COMPLAINTS);
-  const [responding, setResponding] = useState(null);
-  const [responseText, setResponseText] = useState('');
+const statusIcon = {
+  open:        AlertCircle,
+  in_progress: Clock,
+  resolved:    CheckCircle,
+};
 
-  function submitResponse(id) {
-    setComplaints(c => c.map(x => x.id === id ? { ...x, resolved: true } : x));
-    setResponding(null);
-    setResponseText('');
+export default function DashboardComplaints({ shop }) {
+  const [complaints, setComplaints] = useState([]);
+  const [loading,    setLoading]    = useState(true);
+
+  useEffect(() => {
+    if (!shop?.id) { setLoading(false); return; }
+    base44.entities.Complaint.filter({ shop_id: shop.id }, '-created_at', 50)
+      .then((data) => { setComplaints(data); setLoading(false); });
+  }, [shop?.id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin" />
+      </div>
+    );
   }
 
-  const open = complaints.filter(c => !c.resolved).length;
-
   return (
-    <div className="space-y-4 max-w-2xl">
-      <div>
-        <h1 className="font-heading text-xl font-extrabold">Complaints &amp; feedback</h1>
-        <p className="text-sm text-muted-foreground">Unresolved complaints may lower your trust score</p>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h1 className="font-heading text-2xl font-extrabold">Complaints</h1>
+        <span className="text-sm text-muted-foreground">{complaints.length} total</span>
       </div>
 
-      {open > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-sm text-amber-800">
-          You have <strong>{open} open complaint{open > 1 ? 's' : ''}</strong>. Respond within 48 hours to avoid a trust score penalty.
+      {complaints.length === 0 ? (
+        <div className="bg-background rounded-2xl border border-border/50 p-12 text-center">
+          <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-400" />
+          <p className="font-medium">No complaints! 🎉</p>
+          <p className="text-sm text-muted-foreground mt-1">Your shop has a clean record.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {complaints.map((c) => {
+            const StatusIcon = statusIcon[c.status] || AlertCircle;
+            const colorClass = statusColor[c.status] || statusColor.open;
+            return (
+              <div key={c.id} className="bg-background rounded-xl border border-border/50 p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${colorClass}`}>
+                    <StatusIcon className="h-3 w-3" />
+                    {(c.status || 'open').replace('_', ' ')}
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {c.created_at ? new Date(c.created_at).toLocaleDateString() : ''}
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground">{c.complaint_text}</p>
+              </div>
+            );
+          })}
         </div>
       )}
-
-      <div className="space-y-3">
-        {complaints.map((c) => (
-          <div key={c.id} className={`rounded-xl border p-4 space-y-3 ${!c.resolved ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-card'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold ${c.resolved ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
-                  {c.initials}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">Submitted {c.days}</p>
-                </div>
-              </div>
-              {c.resolved
-                ? <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Resolved</span>
-                : <span className="text-[10px] font-semibold bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">Open</span>}
-            </div>
-            <p className={`text-sm ${c.resolved ? 'text-muted-foreground' : 'text-foreground'}`}>{c.text}</p>
-            {!c.resolved && (
-              responding === c.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={responseText}
-                    onChange={(e) => setResponseText(e.target.value)}
-                    placeholder="Write your response..."
-                    rows={3}
-                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background outline-none focus:border-primary resize-none"
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={() => submitResponse(c.id)} className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors">
-                      Submit response
-                    </button>
-                    <button onClick={() => setResponding(null)} className="px-4 py-1.5 border border-border rounded-lg text-xs text-muted-foreground hover:bg-secondary transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setResponding(c.id)}
-                  className="px-4 py-1.5 border border-primary text-primary rounded-lg text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  Respond to complaint
-                </button>
-              )
-            )}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

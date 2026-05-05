@@ -1,54 +1,57 @@
-import { Star } from 'lucide-react';
+// src/components/shopowner/DashboardReviews.jsx
+import { ShieldCheck, Star } from 'lucide-react';
+import StarRating from '@/components/StarRating';
 
 export default function DashboardReviews({ reviews }) {
-  const verified = reviews.filter(r => r.verified).length;
-  const pending = reviews.length - verified;
+  const sorted = [...reviews].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   return (
-    <div className="space-y-4 max-w-3xl">
-      <div>
-        <h1 className="font-heading text-xl font-extrabold">Reviews</h1>
-        <p className="text-sm text-muted-foreground">All customer reviews for your shop</p>
-      </div>
+    <div className="space-y-5">
+      <h1 className="font-heading text-2xl font-extrabold">Reviews</h1>
 
-      <div className="flex gap-2 flex-wrap">
-        <span className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">{verified} verified</span>
-        <span className="text-xs font-semibold bg-amber-50 text-amber-700 px-3 py-1 rounded-full">{pending} pending</span>
-        <span className="text-xs font-semibold bg-blue-50 text-blue-700 px-3 py-1 rounded-full">{reviews.length} total</span>
-      </div>
-
-      {reviews.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center text-muted-foreground">
-          No reviews yet for your shop.
+      {sorted.length === 0 ? (
+        <div className="bg-background rounded-2xl border border-border/50 p-12 text-center">
+          <Star className="h-10 w-10 mx-auto mb-2 text-muted-foreground/30" />
+          <p className="text-muted-foreground">No reviews yet. Share your shop link to get your first review!</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {reviews.map((r) => (
-            <div key={r.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
+          {sorted.map((review) => (
+            <div key={review.id} className="bg-background rounded-xl border border-border/50 p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                    {(r.reviewer_name || 'U')[0]}
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {(review.reviewer_name || 'U')[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{r.reviewer_name || 'Anonymous'}</p>
+                    <p className="font-medium text-sm">{review.reviewer_name || `User #${review.user_id}`}</p>
                     <p className="text-xs text-muted-foreground">
-                      User trust: {r.reviewer_trust_level || '—'}
-                      {r.proof_image_url ? ' · Screenshot attached' : ' · No screenshot'}
+                      {review.created_at ? new Date(review.created_at).toLocaleDateString() : ''}
                     </p>
                   </div>
                 </div>
-                {r.verified
-                  ? <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Verified</span>
-                  : <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Pending</span>}
+                <div className="flex items-center gap-2">
+                  {(review.is_verified || review.verified) && (
+                    <span className="text-xs text-green-600 flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3" /> Verified
+                    </span>
+                  )}
+                  <StarRating rating={review.rating} size="sm" />
+                </div>
               </div>
-              <div className="flex items-center gap-0.5">
-                {[1,2,3,4,5].map(s => (
-                  <Star key={s} className={`h-3.5 w-3.5 ${s <= r.rating ? 'fill-accent text-accent' : 'text-muted-foreground/20'}`} />
-                ))}
-                <span className="text-xs text-muted-foreground ml-1">{r.rating}/5</span>
-              </div>
-              <p className="text-sm text-muted-foreground">{r.comment}</p>
+              <p className="text-sm text-muted-foreground">
+                {review.review_text || review.comment}
+              </p>
+              {review.evidence_url && (
+                <a
+                  href={review.evidence_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  View evidence →
+                </a>
+              )}
             </div>
           ))}
         </div>
