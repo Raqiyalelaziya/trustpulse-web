@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ThumbsUp, ShieldCheck, Flag, Share2, MessageCircle, BadgeCheck, X, Send, ChevronDown, ChevronUp } from 'lucide-react';
-import StarRating from './StarRating';
+import StarRating from '../components/StarRating';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
