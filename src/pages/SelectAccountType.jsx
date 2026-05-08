@@ -1,97 +1,175 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { Store, User, ArrowRight, ShieldCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom'
+import { User, Store, ArrowRight } from 'lucide-react'
+import shieldLogo from '../assets/shield.png'
+import { useLang } from '@/lib/LanguageContext'
 
 export default function SelectAccountType() {
-  const [selected, setSelected] = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const { lang } = useLang()
 
-  async function handleContinue() {
-    if (!selected) return;
-    setLoading(true);
-    await base44.auth.updateMe({
-      role: selected === 'shop_owner' ? 'shop_owner' : 'user',
-    });
-    navigate(selected === 'shop_owner' ? '/shop-owner-dashboard' : '/');
+  const handleSelection = (accountType) => {
+    // Store the selected account type in sessionStorage
+    sessionStorage.setItem('selected_account_type', accountType)
+    // Navigate to signup page
+    navigate('/signup')
   }
 
-  const options = [
-    {
-      id: 'user',
-      icon: User,
-      title: 'Regular User',
-      description: 'Browse shops, write reviews, earn points and build your trust profile.',
-      color: 'from-primary to-primary/70',
-      border: 'border-primary',
-      bg: 'bg-primary/5',
-    },
-    {
-      id: 'shop_owner',
-      icon: Store,
-      title: 'Shop Owner',
-      description: 'Manage your shop profile, view and respond to customer reviews.',
-      color: 'from-amber-500 to-orange-500',
-      border: 'border-amber-400',
-      bg: 'bg-amber-50 dark:bg-amber-950/20',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-lg space-y-8">
-
+    <div className="min-h-screen flex items-center justify-center p-4"
+      style={{ 
+        background: 'linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%)'
+      }}
+    >
+      <div className="w-full max-w-4xl">
+        
         {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
-              <ShieldCheck className="h-6 w-6 text-white" />
-            </div>
-            <span className="font-heading text-2xl font-black">TrustPulse</span>
+        <div className="text-center mb-12">
+          <div className="flex justify-center mb-6">
+            <img src={shieldLogo} alt="TrustPulse" className="h-20 w-auto" />
           </div>
-          <h1 className="font-heading text-3xl font-extrabold">Welcome! Who are you?</h1>
-          <p className="text-muted-foreground text-sm">Choose your account type to get the best experience.</p>
+          <h1 className="font-heading font-black text-4xl text-white mb-3">
+            {lang === 'ar' ? 'اختر نوع حسابك' : 'Choose Your Account Type'}
+          </h1>
+          <p className="text-white/60 text-lg">
+            {lang === 'ar' 
+              ? 'حدد ما إذا كنت تريد مراجعة المتاجر أو إدارة متجرك الخاص' 
+              : 'Select whether you want to review shops or manage your own shop'}
+          </p>
         </div>
 
-        {/* Options */}
-        <div className="space-y-4">
-          {options.map((opt) => {
-            const Icon    = opt.icon;
-            const isSelected = selected === opt.id;
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setSelected(opt.id)}
-                className={`w-full text-left rounded-2xl border-2 p-5 transition-all duration-200 flex items-center gap-5 ${
-                  isSelected
-                    ? `${opt.border} ${opt.bg} shadow-md`
-                    : 'border-border/50 bg-card hover:border-border hover:shadow-sm'
-                }`}
-              >
-                <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${opt.color} flex items-center justify-center shrink-0 shadow-md`}>
-                  <Icon className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-heading font-bold text-base">{opt.title}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">{opt.description}</p>
-                </div>
-                {isSelected && <ShieldCheck className="h-6 w-6 text-primary shrink-0" />}
-              </button>
-            );
-          })}
+        {/* Account Type Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          
+          {/* Regular User Card */}
+          <button
+            onClick={() => handleSelection('user')}
+            className="group relative bg-card border-2 border-border rounded-3xl p-8 text-left transition-all duration-300 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/20 hover:-translate-y-1"
+          >
+            <div className="absolute top-6 right-6 h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+              <User className="h-7 w-7 text-white" />
+            </div>
+
+            <div className="space-y-4 pr-20">
+              <div>
+                <h2 className="font-heading font-bold text-2xl text-foreground mb-2">
+                  {lang === 'ar' ? 'مستخدم عادي' : 'Regular User'}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  {lang === 'ar' 
+                    ? 'اكتب تقييمات واربح نقاط المكافآت' 
+                    : 'Write reviews and earn reward points'}
+                </p>
+              </div>
+
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'مراجعة المتاجر ومشاركة تجاربك' : 'Review shops and share your experiences'}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'كسب نقاط المكافآت على كل مراجعة' : 'Earn reward points for each review'}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'الوصول إلى التوصيات الشخصية' : 'Access personalized recommendations'}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'بناء ملفك الشخصي الموثوق' : 'Build your trust profile'}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between">
+              <span className="text-xs font-semibold text-blue-500 uppercase tracking-wider">
+                {lang === 'ar' ? 'ابدأ المراجعة' : 'Start Reviewing'}
+              </span>
+              <ArrowRight className="h-5 w-5 text-blue-500 transition-transform duration-300 group-hover:translate-x-1" />
+            </div>
+          </button>
+
+          {/* Shop Owner Card */}
+          <button
+            onClick={() => handleSelection('shop_owner')}
+            className="group relative bg-card border-2 border-border rounded-3xl p-8 text-left transition-all duration-300 hover:border-emerald-500 hover:shadow-2xl hover:shadow-emerald-500/20 hover:-translate-y-1"
+          >
+            <div className="absolute top-6 right-6 h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+              <Store className="h-7 w-7 text-white" />
+            </div>
+
+            <div className="space-y-4 pr-20">
+              <div>
+                <h2 className="font-heading font-bold text-2xl text-foreground mb-2">
+                  {lang === 'ar' ? 'صاحب متجر' : 'Shop Owner'}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  {lang === 'ar' 
+                    ? 'قم بإنشاء وإدارة ملف متجرك' 
+                    : 'Create and manage your shop profile'}
+                </p>
+              </div>
+
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'المطالبة بمتجرك أو إنشاء واحدة جديدة' : 'Claim your shop or create a new one'}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'الرد على مراجعات العملاء' : 'Respond to customer reviews'}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'تتبع درجة ثقة متجرك' : 'Track your shop trust score'}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 mt-1">✓</span>
+                  <span className="text-muted-foreground">
+                    {lang === 'ar' ? 'الوصول إلى لوحة التحليلات' : 'Access analytics dashboard'}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between">
+              <span className="text-xs font-semibold text-emerald-500 uppercase tracking-wider">
+                {lang === 'ar' ? 'إعداد المتجر' : 'Setup Shop'}
+              </span>
+              <ArrowRight className="h-5 w-5 text-emerald-500 transition-transform duration-300 group-hover:translate-x-1" />
+            </div>
+          </button>
         </div>
 
-        <Button
-          className="w-full h-12 text-base font-semibold rounded-xl gap-2"
-          disabled={!selected || loading}
-          onClick={handleContinue}
-        >
-          {loading ? 'Saving…' : 'Continue'}
-          {!loading && <ArrowRight className="h-5 w-5" />}
-        </Button>
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-white/40 text-sm">
+            {lang === 'ar' 
+              ? 'يمكنك دائمًا تبديل نوع الحساب لاحقًا من إعدادات الملف الشخصي' 
+              : 'You can always switch account type later from your profile settings'}
+          </p>
+          <button 
+            onClick={() => navigate('/login')}
+            className="mt-4 text-sm text-white/60 hover:text-white transition-colors"
+          >
+            {lang === 'ar' ? 'هل لديك حساب؟ تسجيل الدخول' : 'Already have an account? Login'}
+          </button>
+        </div>
       </div>
     </div>
-  );
+  )
 }

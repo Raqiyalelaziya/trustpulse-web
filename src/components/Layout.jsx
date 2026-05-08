@@ -196,7 +196,7 @@ export default function Layout({ children }) {
                   {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
                 </Link>
                 <Link
-                  to="/signup"
+                  to="/select-account-type"
                   onMouseEnter={() => setHoveredNav('signup')}
                   onMouseLeave={() => setHoveredNav(null)}
                   className="text-sm font-bold px-4 py-2 rounded-xl transition-all duration-200 text-white"
@@ -290,7 +290,7 @@ export default function Layout({ children }) {
             })}
             {!user && (
               <Link
-                to="/signup"
+                to="/select-account-type"
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white mt-2"
                 style={{ background: 'linear-gradient(135deg, #00732F, #00a845)' }}
