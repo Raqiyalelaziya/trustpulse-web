@@ -4,11 +4,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   Store, MessageSquare, ShieldCheck, LogOut,
   LayoutDashboard, AlertCircle, User, Calculator,
+  Plus, Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
+import ShopCreationWizard from './ShopCreationWizard';
 import DashboardOverview    from '@/components/shopowner/DashboardOverview';
 import DashboardReviews     from '@/components/shopowner/DashboardReviews';
 import DashboardComplaints  from '@/components/shopowner/DashboardComplaints';
@@ -78,6 +80,12 @@ export default function ShopOwnerDashboard() {
     setUser((u) => ({ ...u, owned_shop_id: shopId }));
   }
 
+  async function handleCreateShop(newShop) {
+    setShop(newShop);
+    setUser((u) => ({ ...u, owned_shop_id: newShop.id }));
+    setReviews([]);
+  }
+
   async function handleSaveShop(editData) {
     await base44.entities.Shop.update(shop.id, editData);
     setShop((s) => ({ ...s, ...editData }));
@@ -109,9 +117,9 @@ export default function ShopOwnerDashboard() {
     );
   }
 
-  // ── No shop yet → show claim screen ──────────────────────────────────────
+  // ── No shop yet → show claim/create screen ───────────────────────────────
   if (!shop) {
-    return <ClaimShopScreen onClaim={handleClaimShop} />;
+    return <ClaimOrCreateScreen onClaim={handleClaimShop} onCreate={handleCreateShop} />;
   }
 
   const initials = shop.name
@@ -223,8 +231,9 @@ export default function ShopOwnerDashboard() {
   );
 }
 
-// ── Claim Shop Screen ─────────────────────────────────────────────────────────
-function ClaimShopScreen({ onClaim }) {
+// ── Claim or Create Shop Screen ──────────────────────────────────────────────
+function ClaimOrCreateScreen({ onClaim, onCreate }) {
+  const [mode,         setMode]         = useState('search'); // 'search' | 'create'
   const [query,        setQuery]        = useState('');
   const [allShops,     setAllShops]     = useState([]);
   const [loadingShops, setLoadingShops] = useState(true);
@@ -247,37 +256,73 @@ function ClaimShopScreen({ onClaim }) {
     setClaiming(null);
   }
 
+  // ── Create Mode: Show Wizard ──────────────────────────────────────────────
+  if (mode === 'create') {
+    return (
+      <ShopCreationWizard 
+        onComplete={onCreate}
+        onCancel={() => setMode('search')}
+      />
+    );
+  }
+
+  // ── Search Mode: Claim Existing ───────────────────────────────────────────
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-6 mt-10">
+    <div className="max-w-2xl mx-auto p-6 space-y-6 mt-10">
       <div className="text-center space-y-2">
         <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto shadow-md">
           <Store className="h-7 w-7 text-white" />
         </div>
-        <h1 className="font-heading text-2xl font-extrabold">Claim Your Shop</h1>
-        <p className="text-sm text-muted-foreground">Search for your shop and claim ownership to manage it.</p>
+        <h1 className="font-heading text-2xl font-extrabold">Get Started</h1>
+        <p className="text-sm text-muted-foreground">
+          Search for your shop to claim it, or create a new listing
+        </p>
       </div>
 
-      <Input
-        placeholder="Search your shop name..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        disabled={loadingShops}
-      />
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Input
+          placeholder="Search for your shop name..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          disabled={loadingShops}
+          className="pl-12 h-12 text-base"
+        />
+      </div>
 
-      {loadingShops && <p className="text-sm text-muted-foreground text-center">Loading shops…</p>}
+      {loadingShops && (
+        <div className="text-center py-8">
+          <div className="w-6 h-6 border-4 border-border border-t-primary rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground mt-2">Loading shops…</p>
+        </div>
+      )}
 
+      {/* Results */}
       {results.length > 0 && (
         <div className="space-y-3">
+          <p className="text-sm font-semibold text-muted-foreground">
+            Found {results.length} shop{results.length !== 1 ? 's' : ''}
+          </p>
           {results.map((shop) => (
-            <div key={shop.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-4">
+            <div key={shop.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-4 hover:border-primary/30 transition-colors">
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="font-bold text-primary text-lg">{shop.name[0]}</span>
+                {shop.shop_icon ? (
+                  <img src={shop.shop_icon} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
+                ) : (
+                  <span className="font-bold text-primary text-lg">{shop.name[0]}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">{shop.name}</p>
                 <p className="text-xs text-muted-foreground">{shop.category} · {shop.platform}</p>
               </div>
-              <Button size="sm" disabled={claiming === shop.id} onClick={() => claim(shop)}>
+              <Button 
+                size="sm" 
+                disabled={claiming === shop.id} 
+                onClick={() => claim(shop)}
+                className="shrink-0"
+              >
                 {claiming === shop.id ? 'Claiming…' : 'Claim'}
               </Button>
             </div>
@@ -285,12 +330,42 @@ function ClaimShopScreen({ onClaim }) {
         </div>
       )}
 
-      {results.length === 0 && query && !loadingShops && (
-        <div className="text-center text-sm text-muted-foreground py-6">
-          No shops found.{' '}
-          <Link to="/add-shop" className="text-primary hover:underline">Add your shop →</Link>
+      {/* No Results or Create New */}
+      {(results.length === 0 && query && !loadingShops) || !query ? (
+        <div className="bg-card border-2 border-dashed border-border rounded-2xl p-8 text-center space-y-4">
+          {query ? (
+            <>
+              <div className="text-4xl">🔍</div>
+              <div>
+                <p className="font-semibold text-foreground">No shops found matching "{query}"</p>
+                <p className="text-sm text-muted-foreground mt-1">Your shop might not be listed yet</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl">🏪</div>
+              <div>
+                <p className="font-semibold text-foreground">Don't see your shop?</p>
+                <p className="text-sm text-muted-foreground mt-1">Create a new shop listing in 3 easy steps</p>
+              </div>
+            </>
+          )}
+          
+          <Button 
+            onClick={() => setMode('create')}
+            className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          >
+            <Plus className="h-4 w-4" />
+            Create New Shop
+          </Button>
+
+          {query && (
+            <p className="text-xs text-muted-foreground">
+              or <button onClick={() => setQuery('')} className="text-primary hover:underline">search again</button>
+            </p>
+          )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
