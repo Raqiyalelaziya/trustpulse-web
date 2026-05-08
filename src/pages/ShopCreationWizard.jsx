@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Store, Instagram, Link as LinkIcon, ShieldCheck, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Check, Store, Globe, Link as LinkIcon, ShieldCheck, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -201,7 +201,7 @@ export default function ShopCreationWizard({ onComplete, onCancel }) {
           <div className="space-y-5">
             <div className="text-center space-y-2 mb-6">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto">
-                <LinkIcon className="h-7 w-7 text-white" />
+                <Globe className="h-7 w-7 text-white" />
               </div>
               <h2 className="font-heading text-2xl font-bold">Connect your social media</h2>
               <p className="text-sm text-muted-foreground">Help customers find and trust your shop (optional)</p>
@@ -209,7 +209,7 @@ export default function ShopCreationWizard({ onComplete, onCancel }) {
 
             <div className="space-y-2">
               <Label htmlFor="profile_url" className="flex items-center gap-2">
-                <Instagram className="h-4 w-4" />
+                <Globe className="h-4 w-4" />
                 Shop Profile URL
               </Label>
               <Input
