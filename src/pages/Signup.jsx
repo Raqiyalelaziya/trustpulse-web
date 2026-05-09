@@ -99,7 +99,7 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
       style={{ 
-        background: 'linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f172a 100%)'
+        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
       }}
     >
       <div className="w-full max-w-md">
@@ -109,19 +109,29 @@ export default function Signup() {
           <div className="flex justify-center mb-4">
             <img src={shieldLogo} alt="TrustPulse" className="h-16 w-auto" />
           </div>
-          <h1 className="font-heading font-black text-3xl text-white mb-2">
+          <h1 className="font-heading font-black text-3xl mb-2"
+            style={{ color: '#1e293b' }}
+          >
             TrustPulse 🇦🇪
           </h1>
-          <p className="text-white/60 text-sm">
+          <p className="text-sm"
+            style={{ color: '#64748b' }}
+          >
             {lang === 'ar' ? 'منصة مراجعات الإمارات الأكثر موثوقية' : "UAE's most trusted shop review platform"}
           </p>
         </div>
 
         {/* Account Type Badge */}
-        <div className="mb-6 flex items-center justify-between bg-card/50 backdrop-blur border border-border/50 rounded-2xl p-3">
+        <div className="mb-6 flex items-center justify-between bg-white border rounded-2xl p-3"
+          style={{ borderColor: '#e2e8f0' }}
+        >
           <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${accountType === 'shop_owner' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-            <span className="text-sm font-semibold text-foreground">
+            <div className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: accountType === 'shop_owner' ? '#10b981' : '#3b82f6' }}
+            />
+            <span className="text-sm font-semibold"
+              style={{ color: '#1e293b' }}
+            >
               {accountType === 'shop_owner' 
                 ? (lang === 'ar' ? 'حساب صاحب متجر' : 'Shop Owner Account')
                 : (lang === 'ar' ? 'حساب مستخدم عادي' : 'Regular User Account')}
@@ -129,19 +139,28 @@ export default function Signup() {
           </div>
           <button
             onClick={() => navigate('/select-account-type')}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs transition-colors"
+            style={{ color: '#64748b' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#1e293b'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
           >
             {lang === 'ar' ? 'تغيير' : 'Change'}
           </button>
         </div>
 
         {/* Signup Form */}
-        <div className="bg-card border border-border/50 rounded-3xl p-8 shadow-2xl backdrop-blur">
+        <div className="bg-white border rounded-3xl p-8 shadow-xl"
+          style={{ borderColor: '#e2e8f0' }}
+        >
           <div className="space-y-2 mb-6">
-            <h2 className="font-heading font-bold text-2xl text-foreground">
+            <h2 className="font-heading font-bold text-2xl"
+              style={{ color: '#1e293b' }}
+            >
               {lang === 'ar' ? 'إنشاء حساب' : 'Create account'}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm"
+              style={{ color: '#64748b' }}
+            >
               {lang === 'ar' 
                 ? 'انضم إلى TrustPulse وابدأ في مراجعة المتاجر' 
                 : 'Join TrustPulse and start reviewing shops'}
@@ -151,7 +170,7 @@ export default function Signup() {
           <form onSubmit={handleSubmit} className="space-y-4">
             
             <div className="space-y-2">
-              <Label htmlFor="full_name">
+              <Label htmlFor="full_name" style={{ color: '#334155' }}>
                 {lang === 'ar' ? 'الاسم الكامل' : 'Full Name'}
               </Label>
               <Input
@@ -162,11 +181,15 @@ export default function Signup() {
                 placeholder={lang === 'ar' ? 'اسمك الكامل' : 'Your full name'}
                 className="h-11"
                 disabled={loading}
+                style={{
+                  borderColor: '#e2e8f0',
+                  color: '#1e293b'
+                }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">
+              <Label htmlFor="email" style={{ color: '#334155' }}>
                 {lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}
               </Label>
               <Input
@@ -177,11 +200,15 @@ export default function Signup() {
                 placeholder={lang === 'ar' ? 'you@example.com' : 'you@example.com'}
                 className="h-11"
                 disabled={loading}
+                style={{
+                  borderColor: '#e2e8f0',
+                  color: '#1e293b'
+                }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">
+              <Label htmlFor="password" style={{ color: '#334155' }}>
                 {lang === 'ar' ? 'كلمة المرور' : 'Password'}
               </Label>
               <div className="relative">
@@ -193,11 +220,18 @@ export default function Signup() {
                   placeholder={lang === 'ar' ? '6 أحرف على الأقل' : 'Min 6 characters'}
                   className="h-11 pr-10"
                   disabled={loading}
+                  style={{
+                    borderColor: '#e2e8f0',
+                    color: '#1e293b'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: '#94a3b8' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#64748b'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -207,10 +241,10 @@ export default function Signup() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 gap-2 font-semibold"
+              className="w-full h-11 gap-2 font-semibold text-white"
               style={{
                 background: accountType === 'shop_owner'
-                  ? 'linear-gradient(135deg, #00732F, #00a845)'
+                  ? 'linear-gradient(135deg, #10b981, #059669)'
                   : 'linear-gradient(135deg, #3b82f6, #2563eb)',
               }}
             >
@@ -229,16 +263,26 @@ export default function Signup() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm"
+              style={{ color: '#64748b' }}
+            >
               {lang === 'ar' ? 'هل لديك حساب؟' : 'Already have an account?'}{' '}
-              <Link to="/login" className="font-semibold text-primary hover:underline">
+              <Link to="/login" className="font-semibold transition-colors"
+                style={{ color: '#3b82f6' }}
+                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+              >
                 {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Link>
             </p>
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-            <span className="inline-block h-1 w-1 rounded-full bg-emerald-500" />
+          <div className="mt-6 flex items-center justify-center gap-1 text-xs"
+            style={{ color: '#94a3b8' }}
+          >
+            <span className="inline-block h-1 w-1 rounded-full"
+              style={{ backgroundColor: '#10b981' }}
+            />
             {lang === 'ar' ? 'بياناتك آمنة ولن تتم مشاركتها' : 'Your data is secure and never shared'}
           </div>
         </div>
@@ -246,7 +290,10 @@ export default function Signup() {
         {/* Back Button */}
         <button
           onClick={() => navigate('/select-account-type')}
-          className="mt-4 w-full flex items-center justify-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+          className="mt-4 w-full flex items-center justify-center gap-2 text-sm transition-colors"
+          style={{ color: '#64748b' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#1e293b'}
+          onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
         >
           <ArrowLeft className="h-4 w-4" />
           {lang === 'ar' ? 'العودة لاختيار نوع الحساب' : 'Back to account type selection'}
