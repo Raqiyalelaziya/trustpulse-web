@@ -55,7 +55,10 @@ export default function Signup() {
     }
 
     setLoading(true)
+    
     try {
+      console.log('Submitting signup...', { accountType })
+      
       const response = await fetch(`${API_BASE}/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,30 +71,45 @@ export default function Signup() {
       })
 
       const data = await response.json()
+      console.log('Signup response:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed')
       }
 
       // Store token and user data
-      localStorage.setItem('trustpulse_token', data.token)
-      localStorage.setItem('trustpulse_user', JSON.stringify(data.user))
+      if (data.token) {
+        localStorage.setItem('trustpulse_token', data.token)
+        console.log('Token stored:', data.token)
+      }
+      
+      if (data.user) {
+        localStorage.setItem('trustpulse_user', JSON.stringify(data.user))
+        console.log('User stored:', data.user)
+      }
       
       // Clear the account type selection from sessionStorage
       sessionStorage.removeItem('selected_account_type')
 
+      // Show success message
       toast.success(lang === 'ar' ? '🎉 تم إنشاء الحساب بنجاح!' : '🎉 Account created successfully!')
       
-      // Redirect based on account type
-      if (accountType === 'shop_owner') {
-        navigate('/shop-owner-dashboard')
-      } else {
-        navigate('/dashboard')
-      }
+      // Determine redirect path
+      const redirectPath = accountType === 'shop_owner' ? '/shop-owner-dashboard' : '/dashboard'
+      console.log('Redirecting to:', redirectPath)
+      
+      // Force redirect with a slight delay to ensure toast shows
+      setTimeout(() => {
+        navigate(redirectPath, { replace: true })
+        // Fallback: force page reload if navigate doesn't work
+        setTimeout(() => {
+          window.location.href = redirectPath
+        }, 500)
+      }, 500)
+      
     } catch (error) {
       console.error('Signup error:', error)
       toast.error(error.message || (lang === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create account'))
-    } finally {
       setLoading(false)
     }
   }
