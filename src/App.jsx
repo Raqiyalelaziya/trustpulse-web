@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from 'sonner'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -14,6 +14,7 @@ import Admin from './pages/Admin'
 import CompareShops from './pages/CompareShops'
 import Contact from './pages/Contact'
 import SelectAccountType from './pages/SelectAccountType'
+import Onboarding from './pages/Onboarding'
 import ShopOwnerDashboard from './pages/ShopOwnerDashboard'
 import ShopOwnerLogin from './pages/ShopOwnerLogin'
 import Dashboard from './pages/Dashboard'
@@ -38,6 +39,7 @@ function App() {
           <Route path="/compare" element={<Layout><CompareShops /></Layout>} />
           <Route path="/contact" element={<Layout><Contact /></Layout>} />
           <Route path="/select-account-type" element={<SelectAccountType />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/shop-owner-login" element={<ShopOwnerLogin />} />
           <Route path="/shop-owner-dashboard" element={<Layout><ShopOwnerDashboard /></Layout>} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
