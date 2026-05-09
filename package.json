@@ -1,8 +1,8 @@
-// Rebuild trigger - May 9, 2026
 {
   "name": "trustpulse-web",
   "private": true,
   "version": "0.0.0",
+  "lastUpdated": "2026-05-09",
   "type": "module",
   "scripts": {
     "dev": "vite",
