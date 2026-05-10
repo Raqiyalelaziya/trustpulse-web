@@ -1,31 +1,44 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const LanguageContext = createContext({ lang: 'en', setLang: () => {} });
+const LanguageContext = createContext();
 
-export function LanguageProvider({ children }) {
-  const [lang, setLangState] = useState(() => localStorage.getItem('tp_lang') || 'en');
-
-  async function setLang(newLang) {
-    setLangState(newLang);
-    localStorage.setItem('tp_lang', newLang);
-    try {
-      await base44.auth.updateMe({ language_preference: newLang });
-    } catch {}
-  }
+export const LanguageProvider = ({ children }) => {
+  const [lang, setLang] = useState('en');
 
   useEffect(() => {
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
-  }, [lang]);
+    // Load saved language from localStorage
+    const savedLang = localStorage.getItem('language');
+    if (savedLang) {
+      setLang(savedLang);
+    }
+  }, []);
+
+  const toggleLanguage = () => {
+    const newLang = lang === 'en' ? 'ar' : 'en';
+    setLang(newLang);
+    localStorage.setItem('language', newLang);
+  };
+
+  const changeLanguage = (newLang) => {
+    setLang(newLang);
+    localStorage.setItem('language', newLang);
+  };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang }}>
-      {children}
+    <LanguageContext.Provider value={{ lang, setLang, toggleLanguage, changeLanguage }}>
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'font-arabic' : ''}>
+        {children}
+      </div>
     </LanguageContext.Provider>
   );
-}
+};
 
-export function useLang() {
-  return useContext(LanguageContext);
-}
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
+
+export default LanguageContext;
