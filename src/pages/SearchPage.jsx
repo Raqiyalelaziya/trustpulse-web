@@ -189,19 +189,49 @@ const Explore = () => {
                 >
                   {/* Shop Image/Header */}
                   <div className={`relative h-48 bg-gradient-to-br ${platformColors[shop.platform] || 'from-gray-400 to-gray-600'} overflow-hidden`}>
-                    {/* Decorative Pattern */}
-                    <div className="absolute inset-0 opacity-20" style={{
-                      backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-                      backgroundSize: '20px 20px'
-                    }}></div>
+                    {/* Background Image (if available) */}
+                    {shop.profile_url ? (
+                      <>
+                        <img 
+                          src={shop.profile_url} 
+                          alt={shop.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                      </>
+                    ) : (
+                      /* Decorative Pattern */
+                      <div className="absolute inset-0 opacity-20" style={{
+                        backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                        backgroundSize: '20px 20px'
+                      }}></div>
+                    )}
 
-                    {/* Shop Initial */}
+                    {/* Shop Icon/Logo */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30 shadow-2xl">
-                        <span className="text-5xl font-bold text-white">
-                          {shop.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                      {shop.shop_icon ? (
+                        <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center border-4 border-white/50 shadow-2xl overflow-hidden">
+                          <img 
+                            src={shop.shop_icon} 
+                            alt={shop.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback to letter if image fails
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = `<span class="text-5xl font-bold bg-gradient-to-br ${platformColors[shop.platform] || 'from-gray-400 to-gray-600'} bg-clip-text text-transparent">${shop.name.charAt(0).toUpperCase()}</span>`;
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30 shadow-2xl">
+                          <span className="text-5xl font-bold text-white">
+                            {shop.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Badges */}
