@@ -1,126 +1,57 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { api } from '../api';
-import {
-  ExternalLink, PlusCircle, MessageSquare, ShieldCheck,
-  Search, ArrowUpDown, SlidersHorizontal, X, Star,
-  TrendingUp, Calendar, Award, ChevronRight,
-} from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import StarRating from '../components/StarRating';
-import TrustBadge from '../components/TrustBadge';
-import ReviewCard from '../components/ReviewCard';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/lib/LanguageContext';
+import { t } from '@/lib/i18n';
 
-// ── Animated score ring ───────────────────────────────────────────────────────
-function TrustRing({ score, size = 140 }) {
-  const stroke = 9
-  const r      = (size - stroke) / 2
-  const circ   = 2 * Math.PI * r
-  const offset = circ - (Math.min(score, 100) / 100) * circ
-  const color  = score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : score >= 25 ? '#3b82f6' : '#94a3b8'
-  const label  = score >= 75 ? 'High' : score >= 50 ? 'Medium' : score >= 25 ? 'Low' : 'New'
-
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={stroke} />
-        <circle
-          cx={size/2} cy={size/2} r={r} fill="none"
-          stroke={color} strokeWidth={stroke}
-          strokeDasharray={circ} strokeDashoffset={offset}
-          strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)' }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-white leading-none">{score}%</span>
-        <span className="text-[11px] text-white/60 uppercase tracking-widest mt-0.5">Trust</span>
-        <span className="text-xs font-bold mt-1 px-2 py-0.5 rounded-full" style={{ background: `${color}30`, color }}>
-          {label}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-// ── Animated bar ─────────────────────────────────────────────────────────────
-function Bar({ value, max, color }) {
-  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
-  return (
-    <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-      <div
-        className="h-full rounded-full transition-all duration-700"
-        style={{ width: `${pct}%`, backgroundColor: color }}
-      />
-    </div>
-  )
-}
-
-const categoryGradients = {
-  Fashion:     'from-pink-600 via-rose-700 to-red-800',
-  Beauty:      'from-purple-600 via-violet-700 to-purple-800',
-  Electronics: 'from-blue-600 via-indigo-700 to-blue-900',
-  Accessories: 'from-amber-600 via-orange-700 to-orange-800',
-  Home:        'from-teal-600 via-emerald-700 to-green-800',
-  Food:        'from-orange-500 via-red-600 to-red-800',
-  Perfume:     'from-violet-600 via-purple-700 to-indigo-800',
-  Handmade:    'from-yellow-600 via-amber-700 to-orange-800',
-  Health:      'from-emerald-600 via-green-700 to-teal-800',
-  Sports:      'from-sky-600 via-blue-700 to-blue-900',
-  Books:       'from-indigo-600 via-blue-700 to-slate-800',
-  Other:       'from-slate-600 via-slate-700 to-slate-800',
-}
-
-const categoryEmoji = {
-  Fashion: '👗', Beauty: '💄', Electronics: '📱', Accessories: '👜',
-  Home: '🏠', Food: '🍽️', Perfume: '🌸', Handmade: '🤝',
-  Health: '💚', Sports: '⚽', Books: '📚', Other: '🏪',
-}
-
-export default function ShopDetail() {
+const ShopDetail = () => {
   const { id } = useParams();
-  const [shop,              setShop]              = useState(null);
-  const [reviews,           setReviews]           = useState([]);
-  const [user,              setUser]              = useState(null);
-  const [loading,           setLoading]           = useState(true);
-  const [reviewSearch,      setReviewSearch]      = useState('');
-  const [reviewSort,        setReviewSort]        = useState('recent');
-  const [reviewMinRating,   setReviewMinRating]   = useState('Any');
-  const [reviewVerifiedOnly,setReviewVerifiedOnly]= useState(false);
-  const [showFilters,       setShowFilters]       = useState(false);
-  const [trustBreakdown,    setTrustBreakdown]    = useState(null);
-
-  async function loadData() {
-    const [shopData, reviewsData] = await Promise.all([
-      api.getShop(id),
-      base44.entities.Review.filter({ shop_id: id }, '-created_at', 50),
-    ]);
-    setShop(shopData);
-    setReviews(reviewsData);
-
-    // Load trust breakdown if endpoint available
-    try {
-      const res = await fetch(`https://trustpulse-api.onrender.com/trust/shop/${id}`)
-      if (res.ok) setTrustBreakdown(await res.json())
-    } catch { /* not critical */ }
-
-    setLoading(false);
-  }
+  const navigate = useNavigate();
+  const { lang } = useLanguage();
+  const [shop, setShop] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [trustBreakdown, setTrustBreakdown] = useState(null);
 
   useEffect(() => {
-    loadData();
-    base44.auth.me().then(setUser).catch(() => {});
+    fetchShopData();
+    fetchTrustBreakdown();
   }, [id]);
+
+  const fetchShopData = async () => {
+    try {
+      const response = await fetch(`https://trustpulse-api.onrender.com/shops/${id}`);
+      const data = await response.json();
+      setShop(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTrustBreakdown = async () => {
+    try {
+      const response = await fetch(`https://trustpulse-api.onrender.com/trust/shop/${id}`);
+      const data = await response.json();
+      setTrustBreakdown(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const getTrustBadge = (score) => {
+    if (score >= 90) return { text: 'Excellent', emoji: '🏆', color: 'from-yellow-400 to-orange-500', ring: 'ring-yellow-400' };
+    if (score >= 80) return { text: 'Very Good', emoji: '⭐', color: 'from-green-400 to-emerald-500', ring: 'ring-green-400' };
+    if (score >= 70) return { text: 'Good', emoji: '✓', color: 'from-blue-400 to-cyan-500', ring: 'ring-blue-400' };
+    if (score >= 60) return { text: 'Fair', emoji: '!', color: 'from-orange-400 to-red-500', ring: 'ring-orange-400' };
+    return { text: 'New Shop', emoji: '🌱', color: 'from-gray-400 to-gray-500', ring: 'ring-gray-400' };
+  };
 
   if (loading) {
     return (
-      <div className="space-y-4 max-w-5xl mx-auto">
-        <div className="h-56 bg-card rounded-3xl animate-pulse" />
-        <div className="grid grid-cols-3 gap-4">
-          <div className="h-32 bg-card rounded-2xl animate-pulse col-span-2" />
-          <div className="h-32 bg-card rounded-2xl animate-pulse" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading shop details...</p>
         </div>
       </div>
     );
@@ -128,345 +59,336 @@ export default function ShopDetail() {
 
   if (!shop) {
     return (
-      <div className="text-center py-20">
-        <p className="text-lg text-muted-foreground">Shop not found</p>
-        <Link to="/" className="text-primary hover:underline text-sm mt-2 block">Back to home</Link>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <span className="text-6xl block mb-4">😔</span>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Shop Not Found</h2>
+          <button
+            onClick={() => navigate('/explore')}
+            className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+          >
+            Browse Shops
+          </button>
+        </div>
       </div>
     );
   }
 
-  const gradient      = categoryGradients[shop.category] || categoryGradients.Other
-  const emoji         = categoryEmoji[shop.category] || '🏪'
-  const score         = shop.trust_score || 0
-  const avgRating     = parseFloat(shop.average_rating || 0)
-  const reviewCount   = shop.review_count || reviews.length
-  const verifiedCount = shop.verified_review_count || reviews.filter(r => r.is_verified || r.verified).length
-  const initials      = shop.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'
-
-  const ratingDist = [5, 4, 3, 2, 1].map((r) => ({
-    rating:  r,
-    count:   reviews.filter((rev) => rev.rating === r).length,
-    percent: reviews.length > 0
-      ? (reviews.filter((rev) => rev.rating === r).length / reviews.length) * 100
-      : 0,
-  }));
-
-  // Filter + sort reviews
-  let filtered = [...reviews]
-  if (reviewSearch.trim()) {
-    const q = reviewSearch.toLowerCase()
-    filtered = filtered.filter(r =>
-      (r.review_text || r.comment || '').toLowerCase().includes(q) ||
-      (r.reviewer_name || '').toLowerCase().includes(q)
-    )
-  }
-  if (reviewMinRating !== 'Any') {
-    filtered = filtered.filter(r => (r.rating || 0) >= parseFloat(reviewMinRating))
-  }
-  if (reviewVerifiedOnly) {
-    filtered = filtered.filter(r => r.is_verified || r.verified)
-  }
-  if (reviewSort === 'highest')  filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-  else if (reviewSort === 'helpful') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0))
-  else filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-
-  const hasActiveFilters = reviewMinRating !== 'Any' || reviewVerifiedOnly
+  const badge = getTrustBadge(shop.trust_score);
+  const reviews = shop.reviews || [];
+  const avgRating = shop.average_rating || 0;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12">
+      
+      {/* Hero Header */}
+      <div className={`relative bg-gradient-to-br from-pink-600 via-purple-600 to-indigo-600 overflow-hidden`}>
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+          backgroundSize: '30px 30px'
+        }}></div>
+        
+        {/* Background Image if available */}
+        {shop.profile_url && (
+          <>
+            <img 
+              src={shop.profile_url} 
+              alt={shop.name}
+              className="absolute inset-0 w-full h-full object-cover opacity-30"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-purple-900/50 to-transparent"></div>
+          </>
+        )}
 
-      {/* ── Hero Banner ───────────────────────────────────────────────── */}
-      <div className={`relative rounded-3xl overflow-hidden bg-gradient-to-br ${gradient} min-h-[220px]`}>
-        {/* Atmospheric overlays */}
-        <div className="absolute inset-0 opacity-25"
-          style={{ backgroundImage: 'radial-gradient(ellipse at 10% 50%, rgba(255,255,255,0.2), transparent 60%)' }}
-        />
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }}
-        />
-
-        {/* Platform pill */}
-        <div className="absolute top-5 right-5">
-          <span className="text-xs font-semibold text-white/90 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
-            {shop.platform}
-          </span>
-        </div>
-
-        <div className="relative p-6 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8">
-          {/* Logo */}
-          <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl border-2 border-white/30 shrink-0 shadow-2xl overflow-hidden bg-black/20 backdrop-blur-sm flex items-center justify-center">
-            {shop.shop_icon
-              ? <img src={shop.shop_icon} alt={shop.name} className="w-full h-full object-cover" />
-              : <span className="font-black text-white text-3xl">{initials}</span>
-            }
-          </div>
-
-          {/* Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="text-lg">{emoji}</span>
-              <span className="text-xs font-semibold text-white/70 bg-white/15 px-3 py-1 rounded-full">
-                {shop.category}
-              </span>
-              <TrustBadge level={shop.trust_level} size="sm" />
-            </div>
-            <h1 className="font-heading text-3xl md:text-5xl font-black text-white leading-tight drop-shadow-sm">
-              {shop.name}
-            </h1>
-            {shop.description && (
-              <p className="text-white/60 text-sm mt-2 max-w-md line-clamp-2">{shop.description}</p>
-            )}
-            <div className="flex items-center gap-4 mt-3 flex-wrap">
-              <div className="flex items-center gap-1.5">
-                {[1,2,3,4,5].map(i => (
-                  <Star key={i} className={`h-4 w-4 ${i <= Math.round(avgRating) ? 'fill-yellow-300 text-yellow-300' : 'text-white/20'}`} />
-                ))}
-                <span className="text-white/80 text-sm font-semibold ml-1">{avgRating.toFixed(1)}</span>
-              </div>
-              <span className="text-white/50 text-sm">{reviewCount} reviews</span>
-              {verifiedCount > 0 && (
-                <span className="flex items-center gap-1 text-emerald-300 text-sm">
-                  <ShieldCheck className="h-3.5 w-3.5" />{verifiedCount} verified
-                </span>
+        <div className="relative max-w-6xl mx-auto px-4 py-16">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+            
+            {/* Shop Icon */}
+            <div className="flex-shrink-0">
+              {shop.shop_icon ? (
+                <div className="w-32 h-32 bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-white/50 ring-8 ring-white/20">
+                  <img src={shop.shop_icon} alt={shop.name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className={`w-32 h-32 bg-gradient-to-br ${badge.color} rounded-3xl shadow-2xl flex items-center justify-center border-4 border-white/50 ring-8 ring-white/20`}>
+                  <span className="text-6xl font-bold text-white">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Trust Ring */}
-          <div className="shrink-0 hidden md:block">
-            <TrustRing score={score} size={140} />
-          </div>
-        </div>
-      </div>
+            {/* Shop Info */}
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <span className="px-4 py-2 bg-white/90 backdrop-blur-sm text-purple-700 text-sm font-bold rounded-full shadow-lg">
+                  👗 {shop.category}
+                </span>
+                {shop.license_verified && (
+                  <span className="px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-full shadow-lg flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Verified
+                  </span>
+                )}
+                <span className="px-4 py-2 bg-white/90 backdrop-blur-sm text-gray-900 text-sm font-semibold rounded-full shadow-lg">
+                  {shop.platform}
+                </span>
+              </div>
 
-      {/* ── Mobile trust score ────────────────────────────────────────── */}
-      <div className="md:hidden bg-card rounded-2xl border border-border/50 p-4 flex items-center gap-4">
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br ${gradient}`}>
-          <span className="text-xl font-black text-white">{score}%</span>
-        </div>
-        <div>
-          <p className="font-bold">Trust Score</p>
-          <p className="text-sm text-muted-foreground">
-            {score >= 75 ? 'Highly trusted shop ✓' : score >= 50 ? 'Generally trusted' : 'Building trust'}
-          </p>
-        </div>
-      </div>
+              <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                {shop.name}
+              </h1>
+              
+              {shop.description && (
+                <p className="text-purple-100 text-lg mb-6 max-w-2xl leading-relaxed">
+                  {shop.description}
+                </p>
+              )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* ── Reviews panel ────────────────────────────────────────── */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-xl font-bold flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Reviews
-              <span className="text-sm font-normal text-muted-foreground">({reviews.length})</span>
-            </h2>
-            <Link to={`/add-review?shop=${id}`}>
-              <Button className="rounded-xl gap-2 shadow-sm">
-                <PlusCircle className="h-4 w-4" />
-                Add Review
-              </Button>
-            </Link>
-          </div>
-
-          {/* Search + filters */}
-          {reviews.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    value={reviewSearch}
-                    onChange={(e) => setReviewSearch(e.target.value)}
-                    placeholder="Search reviews…"
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
-                  />
+              {/* Stats */}
+              <div className="flex flex-wrap gap-4">
+                <div className="px-6 py-3 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
+                  <p className="text-purple-200 text-sm">Reviews</p>
+                  <p className="text-3xl font-bold text-white">{reviews.length}</p>
                 </div>
-                <Select value={reviewSort} onValueChange={setReviewSort}>
-                  <SelectTrigger className="w-40 rounded-xl">
-                    <ArrowUpDown className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">Most Recent</SelectItem>
-                    <SelectItem value="highest">Highest Rated</SelectItem>
-                    <SelectItem value="helpful">Most Helpful</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="px-6 py-3 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
+                  <p className="text-purple-200 text-sm">Rating</p>
+                  <p className="text-3xl font-bold text-white">{avgRating.toFixed(1)} ⭐</p>
+                </div>
+                <div className="px-6 py-3 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
+                  <p className="text-purple-200 text-sm">Verified</p>
+                  <p className="text-3xl font-bold text-white">{shop.verified_review_count || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trust Score Circle */}
+            <div className="flex-shrink-0">
+              <div className="relative">
+                <svg className="transform -rotate-90 w-40 h-40">
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="none"
+                    className="text-white/20"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="url(#gradient)"
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 70}`}
+                    strokeDashoffset={`${2 * Math.PI * 70 * (1 - (shop.trust_score || 0) / 100)}`}
+                    className="transition-all duration-1000"
+                    strokeLinecap="round"
+                  />
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#3b82f6" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-bold text-white">{(shop.trust_score || 0).toFixed(0)}%</span>
+                  <span className="text-sm text-purple-200 font-semibold">TRUST</span>
+                  <span className="text-lg mt-1">{badge.emoji}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 -mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Reviews Section */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <span className="text-white text-2xl">💬</span>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Reviews ({reviews.length})</h2>
+                    <p className="text-sm text-gray-500">What customers are saying</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setShowFilters(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-colors ${
-                    showFilters || hasActiveFilters
-                      ? 'bg-primary/10 border-primary/30 text-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/30'
-                  }`}
+                  onClick={() => navigate(`/review?shop=${id}`)}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2"
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filters</span>
-                  {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                  <span className="text-xl">✍️</span>
+                  <span>Add Review</span>
                 </button>
               </div>
 
-              {showFilters && (
-                <div className="bg-card border border-border/50 rounded-xl p-4 flex flex-wrap gap-3 items-end">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Min Rating</label>
-                    <Select value={reviewMinRating} onValueChange={setReviewMinRating}>
-                      <SelectTrigger className="w-28 rounded-xl h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {['Any','2+','3+','4+','4.5+'].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <button
-                    onClick={() => setReviewVerifiedOnly(v => !v)}
-                    className={`flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-medium transition-colors ${
-                      reviewVerifiedOnly
-                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600'
-                        : 'border-border text-muted-foreground hover:border-emerald-500/30'
-                    }`}
-                  >
-                    <ShieldCheck className="h-4 w-4" /> Verified Only
-                  </button>
-                  {hasActiveFilters && (
+              <div className="p-6">
+                {reviews.length === 0 ? (
+                  <div className="text-center py-16">
+                    <span className="text-6xl block mb-4">✍️</span>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">No reviews yet</h3>
+                    <p className="text-gray-600 mb-6">Be the first to review this shop!</p>
                     <button
-                      onClick={() => { setReviewMinRating('Any'); setReviewVerifiedOnly(false) }}
-                      className="flex items-center gap-1 text-xs text-primary hover:underline h-9"
+                      onClick={() => navigate(`/review?shop=${id}`)}
+                      className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
                     >
-                      <X className="h-3 w-3" /> Clear
+                      Write a Review
                     </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Review list */}
-          {reviews.length === 0 ? (
-            <div className="bg-card rounded-2xl border border-border/50 p-12 text-center space-y-3">
-              <div className="text-4xl">✍️</div>
-              <p className="font-medium">No reviews yet</p>
-              <p className="text-sm text-muted-foreground">Be the first to review this shop!</p>
-              <Link to={`/add-review?shop=${id}`}>
-                <Button className="mt-2 rounded-xl">Write a Review</Button>
-              </Link>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">
-              No reviews match your filters.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filtered.map((review) => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  currentUser={user}
-                  onUpdate={loadData}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Sidebar ─────────────────────────────────────────────── */}
-        <div className="space-y-5">
-
-          {/* Rating overview */}
-          <div className="bg-card rounded-2xl border border-border/50 p-5 space-y-5">
-            <h3 className="font-heading font-bold text-base">Rating Overview</h3>
-            <div className="text-center space-y-2">
-              <p className="text-5xl font-black font-heading">{avgRating.toFixed(1)}</p>
-              <StarRating rating={Math.round(avgRating)} size="lg" />
-              <p className="text-sm text-muted-foreground">{reviewCount} reviews</p>
-            </div>
-            <div className="space-y-2">
-              {ratingDist.map((d) => (
-                <div key={d.rating} className="flex items-center gap-2.5">
-                  <span className="text-xs text-muted-foreground w-2">{d.rating}</span>
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
-                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-amber-400 rounded-full transition-all duration-700"
-                      style={{ width: `${d.percent}%` }}
-                    />
                   </div>
-                  <span className="text-xs text-muted-foreground w-5 text-right">{d.count}</span>
-                </div>
-              ))}
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:shadow-lg transition-all">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+                              {review.reviewer_name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{review.reviewer_name}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`w-5 h-5 ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed mb-3">{review.review_text}</p>
+                        {review.is_verified && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Verified Purchase
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Trust Score breakdown */}
-          <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${gradient} p-5 space-y-4`}>
-            <div className="absolute inset-0 opacity-20"
-              style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '16px 16px' }}
-            />
-            <div className="relative">
-              <h3 className="font-heading font-bold text-base text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" /> Trust Breakdown
-              </h3>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            
+            {/* Rating Overview */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Rating Overview</h3>
+              <div className="text-center mb-6">
+                <p className="text-6xl font-bold text-gray-900">{avgRating.toFixed(1)}</p>
+                <div className="flex justify-center gap-1 my-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      className={`w-6 h-6 ${star <= Math.round(avgRating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-gray-600">{reviews.length} reviews</p>
+              </div>
+
+              {/* Rating Breakdown */}
               <div className="space-y-3">
-                {[
-                  { label: 'Ratings',   value: score * 0.4, max: 40,  color: '#fbbf24' },
-                  { label: 'Reviews',   value: score * 0.3, max: 30,  color: '#60a5fa' },
-                  { label: 'Age',       value: score * 0.2, max: 20,  color: '#a78bfa' },
-                  { label: 'Profile',   value: score * 0.1, max: 10,  color: '#34d399' },
-                ].map(({ label, value, max, color }) => (
-                  <div key={label} className="space-y-1">
-                    <div className="flex justify-between text-xs text-white/80">
-                      <span>{label}</span>
-                      <span className="font-bold" style={{ color }}>{Math.round(value)}/{max}</span>
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const count = reviews.filter(r => r.rating === rating).length;
+                  const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                  return (
+                    <div key={rating} className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700 w-8">{rating} ⭐</span>
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-600 w-8">{count}</span>
                     </div>
-                    <Bar value={value} max={max} color={color} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
-          </div>
 
-          {/* Shop info */}
-          <div className="bg-card rounded-2xl border border-border/50 p-5 space-y-4">
-            <h3 className="font-heading font-bold text-base">Shop Info</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" /> Verified Reviews
-                </span>
-                <span className="font-semibold">{verifiedCount}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-1.5">
-                  <Award className="h-4 w-4 text-amber-500" /> Trust Score
-                </span>
-                <span className="font-semibold">{score}%</span>
-              </div>
-              {shop.license_verified && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground flex items-center gap-1.5">
-                    <ShieldCheck className="h-4 w-4 text-primary" /> License
-                  </span>
-                  <span className="text-emerald-600 font-semibold text-xs bg-emerald-50 px-2 py-0.5 rounded-full">Verified ✓</span>
+            {/* Trust Breakdown */}
+            {trustBreakdown && (
+              <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">📊</span>
+                  <h3 className="text-xl font-bold">Trust Breakdown</h3>
                 </div>
-              )}
-            </div>
-            {shop.profile_url && (
-              <a
-                href={shop.profile_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between w-full text-sm text-primary font-medium hover:underline mt-2 pt-3 border-t border-border/50"
-              >
-                <span className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" /> Visit Shop
-                </span>
-                <ChevronRight className="h-4 w-4" />
-              </a>
+                <div className="space-y-4">
+                  {Object.entries(trustBreakdown.components).map(([key, data]) => (
+                    <div key={key}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">{data.label}</span>
+                        <span className="text-sm font-bold">{data.score.toFixed(0)}/{data.weight}</span>
+                      </div>
+                      <div className="w-full bg-white/20 rounded-full h-2">
+                        <div
+                          className="bg-white h-2 rounded-full transition-all"
+                          style={{ width: `${(data.score / parseFloat(data.weight)) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
+
+            {/* Shop Info */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Shop Info</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Verified Reviews</span>
+                  <span className="font-bold text-gray-900">{shop.verified_review_count || 0}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Trust Score</span>
+                  <span className="font-bold text-gray-900">{(shop.trust_score || 0).toFixed(1)}%</span>
+                </div>
+                {shop.license_number && (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-gray-600">License</span>
+                    <span className="font-bold text-green-600">✓ Verified</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default ShopDetail;
