@@ -5,11 +5,11 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
-import Profile from './pages/Profile'
-import SearchPage from './pages/SearchPage'
-import ShopDetail from './pages/ShopDetail'
-import AddReview from './pages/AddReview'
-import AddShop from './pages/AddShop'
+import Profile from './pages/Profile' // Use Profile_REDESIGNED_MENU.jsx
+import SearchPage from './pages/SearchPage' // Use Explore_SEXY.jsx (rename to SearchPage)
+import ShopDetail from './pages/ShopDetail' // Use ShopDetail_SEXY.jsx
+import AddReview from './pages/AddReview' // Use WriteReview_SEXY.jsx (rename to AddReview)
+import AddShop from './pages/AddShop' // Use AddShop_BEAUTIFUL.jsx
 import Admin from './pages/Admin'
 import CompareShops from './pages/CompareShops'
 import Contact from './pages/Contact'
@@ -17,7 +17,7 @@ import SelectAccountType from './pages/SelectAccountType'
 import Onboarding from './pages/Onboarding'
 import ShopOwnerDashboard from './pages/ShopOwnerDashboard'
 import ShopOwnerLogin from './pages/ShopOwnerLogin'
-import Dashboard from './pages/Dashboard'
+import Dashboard from './pages/Dashboard' // Use Dashboard_SEXY.jsx
 
 const queryClient = new QueryClient()
 

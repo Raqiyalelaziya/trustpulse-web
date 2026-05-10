@@ -313,7 +313,7 @@ const Dashboard = () => {
 
               <div className="space-y-3">
                 <button
-                  onClick={() => navigate('/shops')}
+                  onClick={() => navigate('/search')}
                   className="w-full p-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-semibold flex items-center justify-center gap-3 transition-all transform hover:scale-105 shadow-lg"
                 >
                   <span className="text-2xl">🏪</span>
@@ -321,7 +321,7 @@ const Dashboard = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate('/shops')}
+                  onClick={() => navigate('/search')}
                   className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold flex items-center justify-center gap-3 transition-all transform hover:scale-105 shadow-lg"
                 >
                   <span className="text-2xl">✍️</span>

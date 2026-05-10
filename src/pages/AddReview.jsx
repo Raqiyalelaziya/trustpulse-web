@@ -18,6 +18,12 @@ const WriteReview = () => {
 
   useEffect(() => {
     fetchShops();
+    // Get shop ID from URL query params
+    const params = new URLSearchParams(window.location.search);
+    const shopId = params.get('shop');
+    if (shopId) {
+      setSelectedShop(shopId);
+    }
   }, []);
 
   const fetchShops = async () => {
@@ -57,7 +63,7 @@ const WriteReview = () => {
       if (response.ok) {
         const data = await response.json();
         alert(`Review submitted! You earned ${data.points_earned} points!`);
-        navigate('/shops');
+        navigate('/search');
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to submit review');

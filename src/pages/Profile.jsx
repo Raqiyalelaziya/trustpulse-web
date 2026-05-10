@@ -451,7 +451,7 @@ const Profile = () => {
               <span className="text-6xl block mb-4">📝</span>
               <p className="text-gray-500 mb-4">You haven't written any reviews yet</p>
               <button
-                onClick={() => navigate('/shops')}
+                onClick={() => navigate('/search')}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
               >
                 Browse Shops

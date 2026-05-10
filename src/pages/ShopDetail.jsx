@@ -64,7 +64,7 @@ const ShopDetail = () => {
           <span className="text-6xl block mb-4">😔</span>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Shop Not Found</h2>
           <button
-            onClick={() => navigate('/explore')}
+            onClick={() => navigate('/search')}
             className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             Browse Shops
@@ -227,7 +227,7 @@ const ShopDetail = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate(`/review?shop=${id}`)}
+                  onClick={() => navigate(`/add-review?shop=${id}`)}
                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2"
                 >
                   <span className="text-xl">✍️</span>
@@ -242,7 +242,7 @@ const ShopDetail = () => {
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">No reviews yet</h3>
                     <p className="text-gray-600 mb-6">Be the first to review this shop!</p>
                     <button
-                      onClick={() => navigate(`/review?shop=${id}`)}
+                      onClick={() => navigate(`/add-review?shop=${id}`)}
                       className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
                     >
                       Write a Review
