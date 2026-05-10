@@ -1,307 +1,322 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import {
-  Award, Star, ShieldCheck, MessageSquare, Zap, LogOut,
-  Trophy, Target, BadgeCheck, Edit2, Check, X,
-} from 'lucide-react';
-import StarRating from '../components/StarRating';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useLang } from '@/lib/LanguageContext';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/lib/LanguageContext';
 import { t } from '@/lib/i18n';
-import { toast } from 'sonner';
 
-// ─── Badge system (based on trust_score) ─────────────────────────────────────
-const badges = [
-  { name: 'Newcomer',        icon: Star,         minScore: 0,   color: 'text-gray-500 bg-gray-100' },
-  { name: 'Active Reviewer', icon: MessageSquare, minScore: 25,  color: 'text-blue-500 bg-blue-100' },
-  { name: 'Trusted Reviewer',icon: ShieldCheck,   minScore: 50,  color: 'text-green-500 bg-green-100' },
-  { name: 'Top Reviewer',    icon: Trophy,        minScore: 75,  color: 'text-amber-500 bg-amber-100' },
-  { name: 'Elite Reviewer',  icon: Award,         minScore: 90,  color: 'text-purple-500 bg-purple-100' },
-];
-
-function getBadge(score) {
-  const earned = badges.filter((b) => score >= b.minScore);
-  return earned[earned.length - 1] || badges[0];
-}
-
-function getNextBadge(score) {
-  return badges.find((b) => score < b.minScore);
-}
-
-// ─── Component ───────────────────────────────────────────────────────────────
-export default function Profile() {
-  const [user,          setUser]          = useState(null);
-  const [reviews,       setReviews]       = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [editingName,   setEditingName]   = useState(false);
-  const [nameInput,     setNameInput]     = useState('');
-  const { lang } = useLang();
+const Profile = () => {
+  const navigate = useNavigate();
+  const { lang } = useLanguage();
+  const [user, setUser] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const userData = await base44.auth.me();
-        setNameInput(userData.full_name || userData.display_name || '');
-
-        // Load user's reviews (filtered by user_id)
-        const userReviews = await base44.entities.Review.filter(
-          { created_by: userData.email },
-          '-created_at',
-          50,
-        );
-        setReviews(userReviews);
-        setUser(userData);
-      } catch (err) {
-        console.error('Profile load error:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProfile();
+    fetchUserData();
+    fetchUserReviews();
   }, []);
 
-  async function saveName() {
-    const newName = nameInput.trim();
-    if (!newName) return;
-    await base44.auth.updateMe({ full_name: newName, display_name: newName });
-    setUser((prev) => ({ ...prev, full_name: newName, display_name: newName }));
-    setEditingName(false);
-    toast.success('Name updated!');
-  }
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://trustpulse-api.onrender.com/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setUser(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // ─── Loading / error states ─────────────────────────────────────────────
+  const fetchUserReviews = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userResponse = await fetch('https://trustpulse-api.onrender.com/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const userData = await userResponse.json();
+      
+      const response = await fetch(`https://trustpulse-api.onrender.com/reviews?user_id=${userData.id}`);
+      const data = await response.json();
+      setReviews(data);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const getBadgeLevel = (points) => {
+    if (points >= 1000) return { name: 'Elite Reviewer', icon: '👑', color: 'from-yellow-400 to-orange-500', progress: 100 };
+    if (points >= 500) return { name: 'Top Reviewer', icon: '🏆', color: 'from-purple-400 to-pink-500', progress: 75 };
+    if (points >= 100) return { name: 'Trusted Reviewer', icon: '✅', color: 'from-blue-400 to-cyan-500', progress: 50 };
+    if (points >= 50) return { name: 'Active Reviewer', icon: '📝', color: 'from-green-400 to-teal-500', progress: 25 };
+    return { name: 'Newcomer', icon: '⭐', color: 'from-gray-400 to-gray-500', progress: 10 };
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!user) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        Could not load profile. Please <Link to="/login" className="text-primary underline">log in again</Link>.
-      </div>
-    );
-  }
+  if (!user) return null;
 
-  // ─── Derived values ─────────────────────────────────────────────────────
-  const score       = user.trust_score || 0;
-  const currentBadge = getBadge(score);
-  const nextBadge    = getNextBadge(score);
-  const progress     = nextBadge
-    ? ((score - currentBadge.minScore) / (nextBadge.minScore - currentBadge.minScore)) * 100
-    : 100;
-  const CurrentBadgeIcon = currentBadge.icon;
-  const verifiedCount    = reviews.filter((r) => r.is_verified || r.verified).length;
-
-  const displayName = user.full_name || user.display_name || user.email || 'User';
-  const initials    = displayName[0]?.toUpperCase() || '?';
+  const badge = getBadgeLevel(user.points_balance || 0);
+  const verifiedReviews = reviews.filter(r => r.is_verified).length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-
-      {/* ── Profile Header ────────────────────────────────────────────── */}
-      <div className="bg-card rounded-3xl border border-border/50 overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-primary via-primary/80 to-accent/50 relative">
-          <div className="absolute inset-0 bg-black/10" />
-        </div>
-        <div className="px-6 pb-6 -mt-12 relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
-
-            {/* Avatar */}
-            <div className="h-24 w-24 rounded-2xl bg-card border-4 border-card shadow-lg flex items-center justify-center">
-              <span className="text-3xl font-bold text-primary font-heading">{initials}</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 relative overflow-hidden">
+          {/* Gradient Background Decoration */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+          
+          <div className="relative flex items-start gap-6">
+            {/* Profile Avatar */}
+            <div className={`w-32 h-32 bg-gradient-to-br ${badge.color} rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-lg transform hover:scale-105 transition-transform`}>
+              {user.full_name?.charAt(0).toUpperCase() || 'U'}
             </div>
 
-            {/* Name + email */}
+            {/* Profile Info */}
             <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                {editingName ? (
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{user.full_name}</h1>
+                  <p className="text-gray-600 mb-3">{user.email}</p>
                   <div className="flex items-center gap-2">
-                    <Input
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && saveName()}
-                      className="h-8 text-base rounded-lg px-2 w-44 font-heading font-extrabold"
-                      placeholder="Your name"
-                    />
-                    <button onClick={saveName}              className="p-1 text-green-600"><Check className="h-4 w-4" /></button>
-                    <button onClick={() => setEditingName(false)} className="p-1 text-muted-foreground"><X className="h-4 w-4" /></button>
+                    <span className={`px-4 py-2 bg-gradient-to-r ${badge.color} text-white rounded-full text-sm font-semibold shadow-md`}>
+                      {badge.icon} {badge.name}
+                    </span>
+                    <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                      {user.role}
+                    </span>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="font-heading text-2xl font-extrabold">{displayName}</h1>
-                    <button onClick={() => setEditingName(true)} className="p-0.5 text-muted-foreground hover:text-foreground">
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-                {score >= 75 && (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-                    <BadgeCheck className="h-3.5 w-3.5" /> Verified
-                  </span>
-                )}
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  score >= 75 ? 'bg-blue-50 text-blue-600' :
-                  score >= 50 ? 'bg-amber-50 text-amber-600' :
-                  'bg-gray-100 text-gray-500'
-                }`}>
-                  {user.trust_level || 'Normal'} Trust
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
-              <p className="text-xs text-muted-foreground">
-                Role: <span className="capitalize font-medium">{user.role || 'user'}</span>
-              </p>
-            </div>
-
-            <Button
-              variant="ghost" size="sm"
-              className="gap-2 text-muted-foreground"
-              onClick={() => base44.auth.logout('/')}
-            >
-              <LogOut className="h-4 w-4" />
-              {t(lang, 'logout') || 'Logout'}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Stats Grid ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Trust Score',       value: `${score}%`,      icon: Zap,          color: 'text-accent' },
-          { label: 'Reviews',           value: reviews.length,    icon: MessageSquare, color: 'text-primary' },
-          { label: 'Verified Reviews',  value: verifiedCount,     icon: ShieldCheck,  color: 'text-green-500' },
-          { label: 'Profile Complete',  value: `${user.profile_completeness || 0}%`, icon: Target, color: 'text-amber-500' },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-card rounded-2xl border border-border/50 p-5 text-center">
-            <stat.icon className={`h-6 w-6 mx-auto mb-2 ${stat.color}`} />
-            <p className="text-2xl font-extrabold font-heading">{stat.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Trust Score Breakdown ─────────────────────────────────────── */}
-      <div className="bg-card rounded-2xl border border-border/50 p-6 space-y-4">
-        <h2 className="font-heading font-semibold flex items-center gap-2">
-          <BadgeCheck className="h-5 w-5 text-blue-600" />
-          Trust Score Breakdown
-        </h2>
-        <div className="space-y-3">
-          {[
-            { label: 'Rating quality',      pct: score * 0.4,  color: 'bg-accent' },
-            { label: 'Review count',        pct: score * 0.3,  color: 'bg-primary' },
-            { label: 'Account age',         pct: score * 0.2,  color: 'bg-blue-500' },
-            { label: 'Profile completeness',pct: score * 0.1,  color: 'bg-green-500' },
-          ].map((item) => (
-            <div key={item.label}>
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>{item.label}</span>
-                <span>{Math.round(item.pct)}%</span>
-              </div>
-              <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${item.color}`} style={{ width: `${Math.min(item.pct, 100)}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Overall trust score: <strong>{score}%</strong>.{' '}
-          {score >= 75
-            ? 'Excellent! You are a verified trusted reviewer. 🎉'
-            : `Reach 75% to become Verified.`}
-        </p>
-      </div>
-
-      {/* ── Badge Progress ────────────────────────────────────────────── */}
-      <div className="bg-card rounded-2xl border border-border/50 p-6 space-y-4">
-        <h2 className="font-heading font-semibold flex items-center gap-2">
-          <Target className="h-5 w-5 text-primary" />
-          Badge Progress
-        </h2>
-        <div className="flex items-center gap-4">
-          <div className={`h-14 w-14 rounded-xl flex items-center justify-center ${currentBadge.color}`}>
-            <CurrentBadgeIcon className="h-7 w-7" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold">{currentBadge.name}</p>
-            {nextBadge ? (
-              <>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
-                  </div>
-                  <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Reach {nextBadge.minScore}% trust score to unlock "{nextBadge.name}"
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors"
+                >
+                  ⚙️ {t(lang, 'edit')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {/* Trust Score */}
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium opacity-90">Trust Score</span>
+              <span className="text-3xl">⚡</span>
+            </div>
+            <p className="text-5xl font-bold mb-2">{(user.trust_score || 0).toFixed(0)}%</p>
+            <div className="w-full bg-white/20 rounded-full h-2">
+              <div 
+                className="bg-white h-2 rounded-full"
+                style={{ width: `${user.trust_score || 0}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Reviews */}
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium opacity-90">Reviews</span>
+              <span className="text-3xl">💬</span>
+            </div>
+            <p className="text-5xl font-bold mb-2">{reviews.length}</p>
+            <p className="text-sm opacity-90">Total reviews written</p>
+          </div>
+
+          {/* Verified Reviews */}
+          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium opacity-90">Verified</span>
+              <span className="text-3xl">✅</span>
+            </div>
+            <p className="text-5xl font-bold mb-2">{verifiedReviews}</p>
+            <p className="text-sm opacity-90">With evidence</p>
+          </div>
+
+          {/* Profile Complete */}
+          <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium opacity-90">Profile</span>
+              <span className="text-3xl">🎯</span>
+            </div>
+            <p className="text-5xl font-bold mb-2">{user.profile_completeness || 0}%</p>
+            <div className="w-full bg-white/20 rounded-full h-2">
+              <div 
+                className="bg-white h-2 rounded-full"
+                style={{ width: `${user.profile_completeness || 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Trust Score Breakdown */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white text-2xl">📊</span>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Trust Score Breakdown</h2>
+              </div>
+
+              <div className="space-y-5">
+                {/* Rating Quality */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Rating quality</span>
+                    <span className="text-sm font-bold text-gray-900">0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+
+                {/* Review Count */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Review count</span>
+                    <span className="text-sm font-bold text-gray-900">0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-blue-400 to-indigo-500 h-3 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+
+                {/* Account Age */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Account age</span>
+                    <span className="text-sm font-bold text-gray-900">0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-purple-400 to-pink-500 h-3 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+
+                {/* Profile Completeness */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Profile completeness</span>
+                    <span className="text-sm font-bold text-gray-900">{user.profile_completeness || 0}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-orange-400 to-red-500 h-3 rounded-full" 
+                      style={{ width: `${user.profile_completeness || 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <p className="text-sm text-blue-800">
+                  <strong>💡 Tip:</strong> Overall trust score: <strong>0%</strong>. Reach 75% to become Verified.
                 </p>
-              </>
-            ) : (
-              <p className="text-xs text-green-600 font-medium">Maximum badge reached! 🏆</p>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-3 flex-wrap pt-2">
-          {badges.map((badge) => {
-            const BadgeIcon = badge.icon;
-            const earned    = score >= badge.minScore;
-            return (
-              <div
-                key={badge.name}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm ${
-                  earned ? `${badge.color} border-transparent` : 'text-muted-foreground/40 bg-muted/50 border-border/30'
-                }`}
-              >
-                <BadgeIcon className="h-4 w-4" />
-                {badge.name}
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </div>
+          </div>
 
-      {/* ── Your Reviews ─────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        <h2 className="font-heading text-xl font-bold">Your Reviews</h2>
-        {reviews.length === 0 ? (
-          <div className="bg-card rounded-2xl border border-border/50 p-12 text-center">
-            <p className="text-muted-foreground">You haven't written any reviews yet</p>
-            <Link to="/add-review">
-              <Button className="mt-4 rounded-xl">Write Your First Review</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {reviews.map((review) => (
-              <Link to={`/shop/${review.shop_id}`} key={review.id} className="block">
-                <div className="bg-card rounded-xl border border-border/50 p-4 hover:shadow-md transition-all space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-sm">{review.shop_name || `Shop #${review.shop_id}`}</p>
-                    <div className="flex items-center gap-2">
-                      {(review.is_verified || review.verified) && (
-                        <span className="text-xs text-green-600 flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" /> Verified
-                        </span>
-                      )}
-                      <StarRating rating={review.rating} size="sm" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {review.review_text || review.comment}
-                  </p>
+          {/* Badge Progress */}
+          <div>
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white text-2xl">🎖️</span>
                 </div>
-              </Link>
-            ))}
+                <h2 className="text-2xl font-bold text-gray-900">Badge Progress</h2>
+              </div>
+
+              <div className="text-center mb-6">
+                <div className={`w-24 h-24 mx-auto bg-gradient-to-br ${badge.color} rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-lg`}>
+                  {badge.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{badge.name}</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Reach 25% trust score to unlock 'Active Reviewer'
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                  <div 
+                    className={`bg-gradient-to-r ${badge.color} h-3 rounded-full transition-all`}
+                    style={{ width: `${badge.progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500">{badge.progress}% progress</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <span className="text-2xl">⭐</span>
+                  <span className="text-sm text-gray-600">Newcomer</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
+                  <span className="text-2xl">📝</span>
+                  <span className="text-sm text-gray-600">Active Reviewer</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
+                  <span className="text-2xl">✅</span>
+                  <span className="text-sm text-gray-600">Trusted Reviewer</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
+                  <span className="text-2xl">🏆</span>
+                  <span className="text-sm text-gray-600">Top Reviewer</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
+                  <span className="text-2xl">👑</span>
+                  <span className="text-sm text-gray-600">Elite Reviewer</span>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Your Reviews */}
+        <div className="mt-8 bg-white rounded-2xl shadow-xl p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Reviews</h2>
+          {reviews.length === 0 ? (
+            <div className="text-center py-12">
+              <span className="text-6xl block mb-4">📝</span>
+              <p className="text-gray-500 mb-4">You haven't written any reviews yet</p>
+              <button
+                onClick={() => navigate('/shops')}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
+              >
+                Browse Shops
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <div key={review.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-gray-900">{review.shop_name}</h4>
+                    <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{review.review_text}</p>
+                  {review.is_verified && (
+                    <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                      ✓ Verified
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default Profile;
