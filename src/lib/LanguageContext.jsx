@@ -33,6 +33,7 @@ export const LanguageProvider = ({ children }) => {
   );
 };
 
+// Export as useLanguage (for new components)
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
@@ -40,5 +41,8 @@ export const useLanguage = () => {
   }
   return context;
 };
+
+// ALSO export as useLang (for existing components)
+export const useLang = useLanguage;
 
 export default LanguageContext;
