@@ -57,27 +57,15 @@ const Layout = ({ children }) => {
             
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
-              <div className="relative w-12 h-12 flex items-center justify-center">
-                <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-lg">
-                  {/* Shield Background */}
-                  <path d="M50 5 L90 20 L90 60 Q90 90 50 115 Q10 90 10 60 L10 20 Z" 
-                        fill="white" 
-                        stroke="#1e40af" 
-                        strokeWidth="2"/>
-                  {/* UAE Flag Stripes */}
-                  <rect x="15" y="25" width="70" height="15" fill="#00732f"/>
-                  <rect x="15" y="40" width="70" height="15" fill="#ffffff"/>
-                  <rect x="15" y="55" width="70" height="15" fill="#000000"/>
-                  <rect x="15" y="25" width="20" height="45" fill="#ff0000"/>
-                  {/* Checkmark */}
-                  <path d="M35 85 L45 95 L65 75" 
-                        stroke="#1e40af" 
-                        strokeWidth="5" 
-                        fill="none" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round"/>
-                </svg>
-              </div>
+              <img 
+                src="/favicon.svg" 
+                alt="TrustPulse" 
+                className="w-12 h-12 drop-shadow-lg"
+                onError={(e) => {
+                  // Fallback if logo not found
+                  e.target.style.display = 'none';
+                }}
+              />
               <div>
                 <h1 className="text-xl font-bold text-white">TrustPulse</h1>
                 <p className="text-xs text-purple-200">UAE VERIFIED REVIEWS</p>
