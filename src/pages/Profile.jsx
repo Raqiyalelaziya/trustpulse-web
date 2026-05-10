@@ -1,35 +1,61 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/lib/LanguageContext';
-import { t } from '@/lib/i18n';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const [user, setUser] = useState(null);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ full_name: '', profile_image: '' });
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    bio: ''
+  });
+  const [settingsForm, setSettingsForm] = useState({
+    notifications: true,
+    email_alerts: true,
+    public_profile: true,
+    language: 'en'
+  });
+  const [saving, setSaving] = useState(false);
 
-  // Avatar options
-  const avatarOptions = ['👤', '👨', '👩', '🧑', '👨‍💼', '👩‍💼', '👨‍🎓', '👩‍🎓', '🧙‍♂️', '🧙‍♀️', '👨‍🚀', '👩‍🚀'];
+  const avatarOptions = ['👤', '👨', '👩', '🧑', '👨‍💼', '👩‍💼', '🧑‍💻', '🦊', '🐱', '🐶', '🦁', '🐼'];
 
   useEffect(() => {
-    fetchUserData();
-    fetchUserReviews();
+    fetchUser();
   }, []);
 
-  const fetchUserData = async () => {
+  const fetchUser = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
       const response = await fetch('https://trustpulse-api.onrender.com/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
-      setUser(data);
-      setEditForm({ full_name: data.full_name, profile_image: data.profile_image || '' });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data);
+        setEditForm({
+          full_name: data.full_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          bio: data.bio || ''
+        });
+      } else {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -37,23 +63,8 @@ const Profile = () => {
     }
   };
 
-  const fetchUserReviews = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const userResponse = await fetch('https://trustpulse-api.onrender.com/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const userData = await userResponse.json();
-      
-      const response = await fetch(`https://trustpulse-api.onrender.com/reviews?user_id=${userData.id}`);
-      const data = await response.json();
-      setReviews(data);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  const handleUpdateProfile = async () => {
+  const handleEditProfile = async () => {
+    setSaving(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('https://trustpulse-api.onrender.com/auth/me', {
@@ -64,480 +75,410 @@ const Profile = () => {
         },
         body: JSON.stringify(editForm)
       });
-      const data = await response.json();
-      setUser(data);
-      setShowEditModal(false);
+
+      if (response.ok) {
+        alert('✅ Profile updated successfully!');
+        setShowEditModal(false);
+        fetchUser();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to update profile');
+      }
     } catch (error) {
       console.error('Error:', error);
+      alert('Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      // Save to localStorage for now
+      localStorage.setItem('userSettings', JSON.stringify(settingsForm));
+      alert('✅ Settings saved!');
+      setShowSettingsModal(false);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
   };
 
-  const getBadgeLevel = (points) => {
-    if (points >= 1000) return { name: 'Elite Reviewer', icon: '👑', color: 'from-yellow-400 to-orange-500', progress: 100 };
-    if (points >= 500) return { name: 'Top Reviewer', icon: '🏆', color: 'from-purple-400 to-pink-500', progress: 75 };
-    if (points >= 100) return { name: 'Trusted Reviewer', icon: '✅', color: 'from-blue-400 to-cyan-500', progress: 50 };
-    if (points >= 50) return { name: 'Active Reviewer', icon: '📝', color: 'from-green-400 to-teal-500', progress: 25 };
-    return { name: 'Newcomer', icon: '⭐', color: 'from-gray-400 to-gray-500', progress: 10 };
+  const getBadge = (score) => {
+    if (score >= 90) return { name: 'Elite', emoji: '👑', color: 'from-yellow-400 to-orange-500' };
+    if (score >= 75) return { name: 'Top', emoji: '🏆', color: 'from-purple-500 to-pink-500' };
+    if (score >= 50) return { name: 'Trusted', emoji: '✅', color: 'from-green-400 to-emerald-500' };
+    if (score >= 25) return { name: 'Active', emoji: '📝', color: 'from-blue-400 to-indigo-500' };
+    return { name: 'Newcomer', emoji: '⭐', color: 'from-gray-400 to-gray-500' };
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600"></div>
       </div>
     );
   }
 
   if (!user) return null;
 
-  const badge = getBadgeLevel(user.points_balance || 0);
-  const verifiedReviews = reviews.filter(r => r.is_verified).length;
+  const badge = getBadge(user.trust_score || 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Profile Header Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-8 relative overflow-hidden">
-          {/* Gradient Background Decoration */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-          
-          <div className="relative flex items-start justify-between">
-            <div className="flex items-start gap-6">
-              {/* Profile Avatar - Clickable */}
-              <div className="relative group">
-                <div 
-                  className={`w-32 h-32 bg-gradient-to-br ${badge.color} rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-lg transform hover:scale-105 transition-transform cursor-pointer`}
-                  onClick={() => setShowEditModal(true)}
-                >
-                  {user.profile_image || user.full_name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                     onClick={() => setShowEditModal(true)}>
-                  <span className="text-white text-sm font-semibold">✏️ Edit</span>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12">
+      
+      {/* Hero Header */}
+      <div className="relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        <div className="relative max-w-6xl mx-auto px-4 py-12">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            
+            {/* Avatar */}
+            <div className="relative cursor-pointer group" onClick={() => setShowAvatarSelector(true)}>
+              <div className="w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl shadow-2xl flex items-center justify-center text-6xl border-4 border-white/20 group-hover:scale-105 transition-all">
+                {user.avatar || user.full_name?.charAt(0).toUpperCase() || '👤'}
               </div>
-
-              {/* Profile Info */}
-              <div className="flex-1">
-                <div className="mb-4">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{user.full_name}</h1>
-                  <p className="text-gray-600 mb-3">{user.email}</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-4 py-2 bg-gradient-to-r ${badge.color} text-white rounded-full text-sm font-semibold shadow-md`}>
-                      {badge.icon} {badge.name}
-                    </span>
-                    <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                      {user.role}
-                    </span>
-                  </div>
-                </div>
+              <div className="absolute inset-0 bg-black/50 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span className="text-white text-sm font-medium">Change</span>
               </div>
             </div>
 
-            {/* Redesigned Settings Menu Button */}
-            <div className="relative z-50">
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                </svg>
-                <span className="text-sm">Menu</span>
-              </button>
-
-              {/* Full Screen Settings Menu Overlay */}
-              {showSettings && (
-                <>
-                  {/* Backdrop */}
-                  <div 
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-in fade-in duration-200"
-                    onClick={() => setShowSettings(false)}
-                  ></div>
-
-                  {/* Settings Panel */}
-                  <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl z-50 animate-in zoom-in-95 fade-in duration-200">
-                    {/* Header */}
-                    <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 rounded-t-3xl p-6 text-white">
-                      <button
-                        onClick={() => setShowSettings(false)}
-                        className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-xl transition-colors"
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <div className="flex items-center gap-4">
-                        <div className={`w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-3xl`}>
-                          {user.profile_image || user.full_name?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold">{user.full_name}</h3>
-                          <p className="text-purple-100 text-sm">{user.email}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu Items */}
-                    <div className="p-4 space-y-2">
-                      {/* Edit Profile */}
-                      <button
-                        onClick={() => {
-                          setShowEditModal(true);
-                          setShowSettings(false);
-                        }}
-                        className="w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-2xl flex items-center gap-4 transition-all group"
-                      >
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-                          <span className="text-2xl">✏️</span>
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-gray-900 text-base">Edit Profile</p>
-                          <p className="text-sm text-gray-600">Update your information</p>
-                        </div>
-                        <svg className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-
-                      {/* Settings */}
-                      <button
-                        onClick={() => {
-                          navigate('/settings');
-                          setShowSettings(false);
-                        }}
-                        className="w-full p-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-2xl flex items-center gap-4 transition-all group"
-                      >
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
-                          <span className="text-2xl">⚙️</span>
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-gray-900 text-base">Settings</p>
-                          <p className="text-sm text-gray-600">Preferences & privacy</p>
-                        </div>
-                        <svg className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-
-                      {/* Dashboard */}
-                      <button
-                        onClick={() => {
-                          navigate('/dashboard');
-                          setShowSettings(false);
-                        }}
-                        className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-2xl flex items-center gap-4 transition-all group"
-                      >
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                          <span className="text-2xl">📊</span>
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-gray-900 text-base">Dashboard</p>
-                          <p className="text-sm text-gray-600">View your statistics</p>
-                        </div>
-                        <svg className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-
-                      {/* Divider */}
-                      <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-2"></div>
-
-                      {/* Logout */}
-                      <button
-                        onClick={handleLogout}
-                        className="w-full p-4 bg-red-50 hover:bg-red-100 rounded-2xl flex items-center gap-4 transition-all group"
-                      >
-                        <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
-                          <span className="text-2xl">🚪</span>
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-red-600 text-base">Logout</p>
-                          <p className="text-sm text-red-400">Sign out of your account</p>
-                        </div>
-                        <svg className="w-6 h-6 text-red-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+            {/* User Info */}
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-4xl font-bold text-white mb-2">{user.full_name}</h1>
+              <p className="text-purple-200 mb-3">{user.email}</p>
+              <div className="flex items-center gap-2 justify-center md:justify-start">
+                <span className={`px-4 py-2 bg-gradient-to-r ${badge.color} text-white rounded-full font-bold text-sm shadow-lg`}>
+                  {badge.emoji} {badge.name}
+                </span>
+                <span className="px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-full font-bold text-sm">
+                  {user.role}
+                </span>
+              </div>
             </div>
+
+            {/* Menu Button */}
+            <button
+              onClick={() => setShowMenu(true)}
+              className="px-6 py-3 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-xl font-semibold transition-all"
+            >
+              ⚙️ Menu
+            </button>
           </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Trust Score */}
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium opacity-90">Trust Score</span>
-              <span className="text-3xl">⚡</span>
-            </div>
-            <p className="text-5xl font-bold mb-2">{(user.trust_score || 0).toFixed(0)}%</p>
-            <div className="w-full bg-white/20 rounded-full h-2">
-              <div 
-                className="bg-white h-2 rounded-full"
-                style={{ width: `${user.trust_score || 0}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Reviews */}
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium opacity-90">Reviews</span>
-              <span className="text-3xl">💬</span>
-            </div>
-            <p className="text-5xl font-bold mb-2">{reviews.length}</p>
-            <p className="text-sm opacity-90">Total reviews written</p>
-          </div>
-
-          {/* Verified Reviews */}
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium opacity-90">Verified</span>
-              <span className="text-3xl">✅</span>
-            </div>
-            <p className="text-5xl font-bold mb-2">{verifiedReviews}</p>
-            <p className="text-sm opacity-90">With evidence</p>
-          </div>
-
-          {/* Profile Complete */}
-          <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium opacity-90">Profile</span>
-              <span className="text-3xl">🎯</span>
-            </div>
-            <p className="text-5xl font-bold mb-2">{user.profile_completeness || 0}%</p>
-            <div className="w-full bg-white/20 rounded-full h-2">
-              <div 
-                className="bg-white h-2 rounded-full"
-                style={{ width: `${user.profile_completeness || 0}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Trust Score Breakdown */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white text-2xl">📊</span>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Trust Score Breakdown</h2>
-              </div>
-
-              <div className="space-y-5">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Rating quality</span>
-                    <span className="text-sm font-bold text-gray-900">0%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full" style={{ width: '0%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Review count</span>
-                    <span className="text-sm font-bold text-gray-900">0%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-blue-400 to-indigo-500 h-3 rounded-full" style={{ width: '0%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Account age</span>
-                    <span className="text-sm font-bold text-gray-900">0%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-purple-400 to-pink-500 h-3 rounded-full" style={{ width: '0%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Profile completeness</span>
-                    <span className="text-sm font-bold text-gray-900">{user.profile_completeness || 0}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-gradient-to-r from-orange-400 to-red-500 h-3 rounded-full" 
-                      style={{ width: `${user.profile_completeness || 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <p className="text-sm text-blue-800">
-                  <strong>💡 Tip:</strong> Overall trust score: <strong>0%</strong>. Reach 75% to become Verified.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Badge Progress */}
-          <div>
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white text-2xl">🎖️</span>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Badge Progress</h2>
-              </div>
-
-              <div className="text-center mb-6">
-                <div className={`w-24 h-24 mx-auto bg-gradient-to-br ${badge.color} rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-lg`}>
-                  {badge.icon}
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{badge.name}</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Reach 25% trust score to unlock 'Active Reviewer'
-                </p>
-                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-                  <div 
-                    className={`bg-gradient-to-r ${badge.color} h-3 rounded-full transition-all`}
-                    style={{ width: `${badge.progress}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500">{badge.progress}% progress</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <span className="text-2xl">⭐</span>
-                  <span className="text-sm text-gray-600">Newcomer</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
-                  <span className="text-2xl">📝</span>
-                  <span className="text-sm text-gray-600">Active Reviewer</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
-                  <span className="text-2xl">✅</span>
-                  <span className="text-sm text-gray-600">Trusted Reviewer</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
-                  <span className="text-2xl">🏆</span>
-                  <span className="text-sm text-gray-600">Top Reviewer</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl opacity-50">
-                  <span className="text-2xl">👑</span>
-                  <span className="text-sm text-gray-600">Elite Reviewer</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Your Reviews */}
-        <div className="mt-8 bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Reviews</h2>
-          {reviews.length === 0 ? (
-            <div className="text-center py-12">
-              <span className="text-6xl block mb-4">📝</span>
-              <p className="text-gray-500 mb-4">You haven't written any reviews yet</p>
-              <button
-                onClick={() => navigate('/search')}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
-              >
-                Browse Shops
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {reviews.map((review) => (
-                <div key={review.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-gray-900">{review.shop_name}</h4>
-                    <span className="text-yellow-500">{'⭐'.repeat(review.rating)}</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{review.review_text}</p>
-                  {review.is_verified && (
-                    <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                      ✓ Verified
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
+      {/* Stats Cards */}
+      <div className="max-w-6xl mx-auto px-4 -mt-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl shadow-xl p-6 text-white">
+            <p className="text-sm opacity-90 mb-1">Trust Score</p>
+            <p className="text-4xl font-bold">{(user.trust_score || 0).toFixed(0)}%</p>
+          </div>
+          <div className="bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl shadow-xl p-6 text-white">
+            <p className="text-sm opacity-90 mb-1">Points</p>
+            <p className="text-4xl font-bold">{user.points_balance || 0}</p>
+          </div>
+          <div className="bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl shadow-xl p-6 text-white">
+            <p className="text-sm opacity-90 mb-1">Profile</p>
+            <p className="text-4xl font-bold">{user.profile_completeness || 0}%</p>
+          </div>
+          <div className="bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl shadow-xl p-6 text-white">
+            <p className="text-sm opacity-90 mb-1">Reviews</p>
+            <p className="text-4xl font-bold">{user.review_count || 0}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="max-w-6xl mx-auto px-4 mt-8">
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              ✏️ Edit Profile
+            </button>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="p-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              ⚙️ Settings
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="p-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              📊 Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Menu Modal */}
+      {showMenu && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowMenu(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 flex items-center gap-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-4xl">
+                {user.full_name?.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-white">{user.full_name}</h3>
+                <p className="text-purple-100">{user.email}</p>
+              </div>
+              <button onClick={() => setShowMenu(false)} className="text-white text-2xl">×</button>
+            </div>
+            <div className="p-4 space-y-2">
+              <button
+                onClick={() => { setShowMenu(false); setShowEditModal(true); }}
+                className="w-full flex items-center gap-4 p-4 hover:bg-purple-50 rounded-xl transition-all"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white text-2xl">✏️</div>
+                <div className="flex-1 text-left">
+                  <p className="font-bold text-gray-900">Edit Profile</p>
+                  <p className="text-sm text-gray-500">Update your information</p>
+                </div>
+                <span className="text-gray-400">›</span>
+              </button>
+              <button
+                onClick={() => { setShowMenu(false); setShowSettingsModal(true); }}
+                className="w-full flex items-center gap-4 p-4 hover:bg-blue-50 rounded-xl transition-all"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center text-white text-2xl">⚙️</div>
+                <div className="flex-1 text-left">
+                  <p className="font-bold text-gray-900">Settings</p>
+                  <p className="text-sm text-gray-500">Preferences & privacy</p>
+                </div>
+                <span className="text-gray-400">›</span>
+              </button>
+              <button
+                onClick={() => { setShowMenu(false); navigate('/dashboard'); }}
+                className="w-full flex items-center gap-4 p-4 hover:bg-green-50 rounded-xl transition-all"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center text-white text-2xl">📊</div>
+                <div className="flex-1 text-left">
+                  <p className="font-bold text-gray-900">Dashboard</p>
+                  <p className="text-sm text-gray-500">View your statistics</p>
+                </div>
+                <span className="text-gray-400">›</span>
+              </button>
+              <button
+                onClick={() => { setShowMenu(false); handleLogout(); }}
+                className="w-full flex items-center gap-4 p-4 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center text-white text-2xl">🚪</div>
+                <div className="flex-1 text-left">
+                  <p className="font-bold text-red-600">Logout</p>
+                  <p className="text-sm text-gray-500">Sign out of your account</p>
+                </div>
+                <span className="text-gray-400">›</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Profile Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-gray-900">Edit Profile</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <span className="text-2xl">✕</span>
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowEditModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-white">✏️ Edit Profile</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-white text-2xl">×</button>
             </div>
-
-            {/* Avatar Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Choose Avatar</label>
-              <div className="grid grid-cols-6 gap-3">
-                {avatarOptions.map((emoji, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setEditForm({ ...editForm, profile_image: emoji })}
-                    className={`p-4 text-3xl rounded-xl border-2 transition-all ${
-                      editForm.profile_image === emoji
-                        ? 'border-purple-500 bg-purple-50 scale-110'
-                        : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="+971 50 123 4567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
+                <textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                  rows="3"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditProfile}
+                  disabled={saving}
+                  className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Name Input */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-              <input
-                type="text"
-                value={editForm.full_name}
-                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors"
-                placeholder="Enter your full name"
-              />
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSettingsModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-white">⚙️ Settings</h3>
+              <button onClick={() => setShowSettingsModal(false)} className="text-white text-2xl">×</button>
             </div>
+            <div className="p-6 space-y-4">
+              {/* Notifications Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-bold text-gray-900">🔔 Notifications</p>
+                  <p className="text-sm text-gray-500">Get notified about updates</p>
+                </div>
+                <button
+                  onClick={() => setSettingsForm({ ...settingsForm, notifications: !settingsForm.notifications })}
+                  className={`relative w-14 h-8 rounded-full transition-all ${settingsForm.notifications ? 'bg-blue-500' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${settingsForm.notifications ? 'left-7' : 'left-1'}`}></div>
+                </button>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleUpdateProfile}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-shadow"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
+              {/* Email Alerts Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-bold text-gray-900">📧 Email Alerts</p>
+                  <p className="text-sm text-gray-500">Receive email updates</p>
+                </div>
+                <button
+                  onClick={() => setSettingsForm({ ...settingsForm, email_alerts: !settingsForm.email_alerts })}
+                  className={`relative w-14 h-8 rounded-full transition-all ${settingsForm.email_alerts ? 'bg-blue-500' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${settingsForm.email_alerts ? 'left-7' : 'left-1'}`}></div>
+                </button>
+              </div>
+
+              {/* Public Profile Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-bold text-gray-900">🌍 Public Profile</p>
+                  <p className="text-sm text-gray-500">Show on leaderboard</p>
+                </div>
+                <button
+                  onClick={() => setSettingsForm({ ...settingsForm, public_profile: !settingsForm.public_profile })}
+                  className={`relative w-14 h-8 rounded-full transition-all ${settingsForm.public_profile ? 'bg-blue-500' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${settingsForm.public_profile ? 'left-7' : 'left-1'}`}></div>
+                </button>
+              </div>
+
+              {/* Language */}
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="font-bold text-gray-900 mb-2">🌐 Language</p>
+                <select
+                  value={settingsForm.language}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, language: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+                >
+                  <option value="en">English</option>
+                  <option value="ar">العربية</option>
+                </select>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <p className="font-bold text-red-700 mb-2">⚠️ Danger Zone</p>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete your account? This cannot be undone!')) {
+                      alert('Account deletion not implemented yet. Contact support.');
+                    }
+                  }}
+                  className="w-full py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-all"
+                >
+                  Delete Account
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={saving}
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Settings'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Selector Modal */}
+      {showAvatarSelector && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAvatarSelector(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Choose Avatar</h3>
+            <div className="grid grid-cols-4 gap-3">
+              {avatarOptions.map((avatar) => (
+                <button
+                  key={avatar}
+                  onClick={() => {
+                    // Save avatar choice
+                    localStorage.setItem('userAvatar', avatar);
+                    setUser({ ...user, avatar });
+                    setShowAvatarSelector(false);
+                  }}
+                  className="aspect-square bg-gradient-to-br from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 rounded-2xl flex items-center justify-center text-4xl transition-all hover:scale-105"
+                >
+                  {avatar}
+                </button>
+              ))}
             </div>
           </div>
         </div>
