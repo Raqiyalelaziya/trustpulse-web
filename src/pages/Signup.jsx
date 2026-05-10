@@ -1,322 +1,173 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import shieldLogo from '../assets/shield.png'
-import { useLang } from '@/lib/LanguageContext'
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useLanguage } from '@/lib/LanguageContext';
 
-const API_BASE = 'https://trustpulse-api.onrender.com'
-
-export default function Signup() {
-  const navigate = useNavigate()
-  const { lang } = useLang()
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [accountType, setAccountType] = useState('user')
-  
+const Signup = () => {
+  const navigate = useNavigate();
+  const { lang } = useLanguage();
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
     password: '',
-  })
+    phone: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Read account type from sessionStorage
-  useEffect(() => {
-    const selectedType = sessionStorage.getItem('selected_account_type')
-    if (selectedType) {
-      setAccountType(selectedType)
-    } else {
-      // If no selection, redirect to account type selection
-      navigate('/select-account-type')
-    }
-  }, [navigate])
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
-  const updateField = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    
-    if (!formData.full_name.trim()) {
-      toast.error(lang === 'ar' ? 'الرجاء إدخال اسمك الكامل' : 'Please enter your full name')
-      return
-    }
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      toast.error(lang === 'ar' ? 'الرجاء إدخال بريد إلكتروني صحيح' : 'Please enter a valid email')
-      return
-    }
-    if (formData.password.length < 6) {
-      toast.error(lang === 'ar' ? 'يجب أن تكون كلمة المرور 6 أحرف على الأقل' : 'Password must be at least 6 characters')
-      return
-    }
-
-    setLoading(true)
-    
     try {
-      console.log('Submitting signup...', { accountType })
-      
-      const response = await fetch(`${API_BASE}/signup`, {
+      const response = await fetch('https://trustpulse-api.onrender.com/auth/signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: formData.full_name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          password: formData.password,
-          role: accountType, // 'user' or 'shop_owner'
-        }),
-      })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      const data = await response.json()
-      console.log('Signup response:', data)
+      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Signup failed')
+      if (response.ok) {
+        // CRITICAL: Save token to localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user || data));
+        
+        console.log('✅ Signup successful! Token saved:', data.token.substring(0, 20) + '...');
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(data.error || 'Signup failed');
       }
-
-      // Store token and user data
-      if (data.token) {
-        localStorage.setItem('trustpulse_token', data.token)
-        console.log('Token stored:', data.token)
-      }
-      
-      if (data.user) {
-        localStorage.setItem('trustpulse_user', JSON.stringify(data.user))
-        console.log('User stored:', data.user)
-      }
-      
-      // Clear the account type selection from sessionStorage
-      sessionStorage.removeItem('selected_account_type')
-
-      // Show success message
-      toast.success(lang === 'ar' ? '🎉 تم إنشاء الحساب بنجاح!' : '🎉 Account created successfully!')
-      
-      // Determine redirect path
-      const redirectPath = accountType === 'shop_owner' ? '/shop-owner-dashboard' : '/dashboard'
-      console.log('Redirecting to:', redirectPath)
-      
-      // Force redirect with a slight delay to ensure toast shows
-      setTimeout(() => {
-        navigate(redirectPath, { replace: true })
-        // Fallback: force page reload if navigate doesn't work
-        setTimeout(() => {
-          window.location.href = redirectPath
-        }, 500)
-      }, 500)
-      
     } catch (error) {
-      console.error('Signup error:', error)
-      toast.error(error.message || (lang === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create account'))
-      setLoading(false)
+      console.error('Signup error:', error);
+      setError('Failed to connect to server');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4"
-      style={{ 
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
-      }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img src={shieldLogo} alt="TrustPulse" className="h-16 w-auto" />
-          </div>
-          <h1 className="font-heading font-black text-3xl mb-2"
-            style={{ color: '#1e293b' }}
-          >
-            TrustPulse 🇦🇪
-          </h1>
-          <p className="text-sm"
-            style={{ color: '#64748b' }}
-          >
-            {lang === 'ar' ? 'منصة مراجعات الإمارات الأكثر موثوقية' : "UAE's most trusted shop review platform"}
-          </p>
-        </div>
-
-        {/* Account Type Badge */}
-        <div className="mb-6 flex items-center justify-between bg-white border rounded-2xl p-3"
-          style={{ borderColor: '#e2e8f0' }}
-        >
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: accountType === 'shop_owner' ? '#10b981' : '#3b82f6' }}
-            />
-            <span className="text-sm font-semibold"
-              style={{ color: '#1e293b' }}
-            >
-              {accountType === 'shop_owner' 
-                ? (lang === 'ar' ? 'حساب صاحب متجر' : 'Shop Owner Account')
-                : (lang === 'ar' ? 'حساب مستخدم عادي' : 'Regular User Account')}
-            </span>
-          </div>
-          <button
-            onClick={() => navigate('/select-account-type')}
-            className="text-xs transition-colors"
-            style={{ color: '#64748b' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#1e293b'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
-          >
-            {lang === 'ar' ? 'تغيير' : 'Change'}
-          </button>
-        </div>
-
-        {/* Signup Form */}
-        <div className="bg-white border rounded-3xl p-8 shadow-xl"
-          style={{ borderColor: '#e2e8f0' }}
-        >
-          <div className="space-y-2 mb-6">
-            <h2 className="font-heading font-bold text-2xl"
-              style={{ color: '#1e293b' }}
-            >
-              {lang === 'ar' ? 'إنشاء حساب' : 'Create account'}
-            </h2>
-            <p className="text-sm"
-              style={{ color: '#64748b' }}
-            >
-              {lang === 'ar' 
-                ? 'انضم إلى TrustPulse وابدأ في مراجعة المتاجر' 
-                : 'Join TrustPulse and start reviewing shops'}
-            </p>
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="text-4xl">✨</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
+            <p className="text-gray-600 mt-2">Join TrustPulse today</p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-600 text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            
-            <div className="space-y-2">
-              <Label htmlFor="full_name" style={{ color: '#334155' }}>
-                {lang === 'ar' ? 'الاسم الكامل' : 'Full Name'}
-              </Label>
-              <Input
-                id="full_name"
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Full Name
+              </label>
+              <input
                 type="text"
+                name="full_name"
                 value={formData.full_name}
-                onChange={(e) => updateField('full_name', e.target.value)}
-                placeholder={lang === 'ar' ? 'اسمك الكامل' : 'Your full name'}
-                className="h-11"
-                disabled={loading}
-                style={{
-                  borderColor: '#e2e8f0',
-                  color: '#1e293b'
-                }}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="John Doe"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" style={{ color: '#334155' }}>
-                {lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}
-              </Label>
-              <Input
-                id="email"
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email
+              </label>
+              <input
                 type="email"
+                name="email"
                 value={formData.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                placeholder={lang === 'ar' ? 'you@example.com' : 'you@example.com'}
-                className="h-11"
-                disabled={loading}
-                style={{
-                  borderColor: '#e2e8f0',
-                  color: '#1e293b'
-                }}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="you@example.com"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" style={{ color: '#334155' }}>
-                {lang === 'ar' ? 'كلمة المرور' : 'Password'}
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => updateField('password', e.target.value)}
-                  placeholder={lang === 'ar' ? '6 أحرف على الأقل' : 'Min 6 characters'}
-                  className="h-11 pr-10"
-                  disabled={loading}
-                  style={{
-                    borderColor: '#e2e8f0',
-                    color: '#1e293b'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: '#94a3b8' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#64748b'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="••••••••"
+              />
             </div>
 
-            <Button
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone (Optional)
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="+971 50 123 4567"
+              />
+            </div>
+
+            <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 gap-2 font-semibold text-white"
-              style={{
-                background: accountType === 'shop_owner'
-                  ? 'linear-gradient(135deg, #10b981, #059669)'
-                  : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              }}
+              className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
               {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {lang === 'ar' ? 'جاري الإنشاء...' : 'Creating account...'}
-                </>
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Creating account...
+                </span>
               ) : (
-                <>
-                  <UserPlus className="h-4 w-4" />
-                  {lang === 'ar' ? 'إنشاء حساب' : 'Create Account'}
-                </>
+                'Create Account'
               )}
-            </Button>
+            </button>
           </form>
 
+          {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-sm"
-              style={{ color: '#64748b' }}
-            >
-              {lang === 'ar' ? 'هل لديك حساب؟' : 'Already have an account?'}{' '}
-              <Link to="/login" className="font-semibold transition-colors"
-                style={{ color: '#3b82f6' }}
-                onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-              >
-                {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
+            <p className="text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-purple-600 font-semibold hover:text-purple-700">
+                Sign in
               </Link>
             </p>
           </div>
-
-          <div className="mt-6 flex items-center justify-center gap-1 text-xs"
-            style={{ color: '#94a3b8' }}
-          >
-            <span className="inline-block h-1 w-1 rounded-full"
-              style={{ backgroundColor: '#10b981' }}
-            />
-            {lang === 'ar' ? 'بياناتك آمنة ولن تتم مشاركتها' : 'Your data is secure and never shared'}
-          </div>
         </div>
-
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/select-account-type')}
-          className="mt-4 w-full flex items-center justify-center gap-2 text-sm transition-colors"
-          style={{ color: '#64748b' }}
-          onMouseEnter={(e) => e.currentTarget.style.color = '#1e293b'}
-          onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {lang === 'ar' ? 'العودة لاختيار نوع الحساب' : 'Back to account type selection'}
-        </button>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Signup;
