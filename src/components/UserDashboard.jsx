@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/lib/LanguageContext';
+import { t } from '@/lib/i18n';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const { lang } = useLanguage();
   const [user, setUser] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // overview, reviews, shops
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchUserData();
@@ -17,20 +20,15 @@ const UserDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('https://trustpulse-api.onrender.com/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
-      }
+      if (!response.ok) throw new Error('Failed to fetch user data');
 
       const data = await response.json();
       setUser(data);
     } catch (error) {
       console.error('Error fetching user data:', error);
-      // Redirect to login if unauthorized
       if (error.message.includes('Unauthorized')) {
         navigate('/login');
       }
@@ -50,11 +48,11 @@ const UserDashboard = () => {
   };
 
   const getTrustBadge = (score) => {
-    if (score >= 90) return { label: 'Excellent', color: 'bg-green-100 text-green-800', icon: '🏆' };
-    if (score >= 80) return { label: 'Very Good', color: 'bg-blue-100 text-blue-800', icon: '⭐' };
-    if (score >= 70) return { label: 'Good', color: 'bg-indigo-100 text-indigo-800', icon: '✓' };
-    if (score >= 60) return { label: 'Fair', color: 'bg-yellow-100 text-yellow-800', icon: '!' };
-    return { label: 'New', color: 'bg-gray-100 text-gray-800', icon: '🌱' };
+    if (score >= 90) return { label: t(lang, 'excellent'), color: 'bg-green-100 text-green-800', icon: '🏆' };
+    if (score >= 80) return { label: t(lang, 'veryGood'), color: 'bg-blue-100 text-blue-800', icon: '⭐' };
+    if (score >= 70) return { label: t(lang, 'good'), color: 'bg-indigo-100 text-indigo-800', icon: '✓' };
+    if (score >= 60) return { label: t(lang, 'fair'), color: 'bg-yellow-100 text-yellow-800', icon: '!' };
+    return { label: t(lang, 'newShop'), color: 'bg-gray-100 text-gray-800', icon: '🌱' };
   };
 
   const getRankEmoji = (rank) => {
@@ -76,12 +74,12 @@ const UserDashboard = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Please log in to view your dashboard</p>
+          <p className="text-gray-600 mb-4">{t(lang, 'loginRequired')}</p>
           <button
             onClick={() => navigate('/login')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Go to Login
+            {t(lang, 'login')}
           </button>
         </div>
       </div>
@@ -95,8 +93,8 @@ const UserDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, {user.full_name}!</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t(lang, 'dashboard')}</h1>
+          <p className="text-gray-600 mt-1">{t(lang, 'welcomeBack')}, {user.full_name}!</p>
         </div>
 
         {/* Stats Cards */}
@@ -104,7 +102,7 @@ const UserDashboard = () => {
           {/* Trust Score Card */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Trust Score</h3>
+              <h3 className="text-sm font-medium text-gray-600">{t(lang, 'trustScore')}</h3>
               <span className="text-2xl">{badge.icon}</span>
             </div>
             <p className="text-3xl font-bold text-gray-900">{(user.trust_score || 0).toFixed(1)}%</p>
@@ -116,7 +114,7 @@ const UserDashboard = () => {
           {/* Points Card */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Total Points</h3>
+              <h3 className="text-sm font-medium text-gray-600">{t(lang, 'totalPoints')}</h3>
               <span className="text-2xl">💎</span>
             </div>
             <p className="text-3xl font-bold text-gray-900">{user.points_balance || 0}</p>
@@ -128,7 +126,7 @@ const UserDashboard = () => {
           {/* Profile Completion */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Profile</h3>
+              <h3 className="text-sm font-medium text-gray-600">{t(lang, 'profile')}</h3>
               <span className="text-2xl">📋</span>
             </div>
             <p className="text-3xl font-bold text-gray-900">{user.profile_completeness || 0}%</p>
@@ -143,7 +141,7 @@ const UserDashboard = () => {
           {/* Account Type */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Account Type</h3>
+              <h3 className="text-sm font-medium text-gray-600">{t(lang, 'accountType')}</h3>
               <span className="text-2xl">👤</span>
             </div>
             <p className="text-xl font-bold text-gray-900 capitalize">{user.role}</p>
@@ -175,7 +173,7 @@ const UserDashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
-                Leaderboard
+                {t(lang, 'leaderboard')}
               </button>
               <button
                 onClick={() => setActiveTab('rewards')}
@@ -185,7 +183,7 @@ const UserDashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
-                Rewards
+                {t(lang, 'earnRewards')}
               </button>
             </nav>
           </div>
@@ -193,15 +191,15 @@ const UserDashboard = () => {
           <div className="p-6">
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t(lang, 'quickActions')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => navigate('/shops')}
                     className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                   >
                     <div className="text-3xl mb-2">🏪</div>
-                    <h4 className="font-medium text-gray-900">Browse Shops</h4>
-                    <p className="text-sm text-gray-500">Find trusted sellers</p>
+                    <h4 className="font-medium text-gray-900">{t(lang, 'browseShops')}</h4>
+                    <p className="text-sm text-gray-500">{t(lang, 'findTrustedSellers')}</p>
                   </button>
 
                   <button
@@ -209,8 +207,8 @@ const UserDashboard = () => {
                     className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                   >
                     <div className="text-3xl mb-2">➕</div>
-                    <h4 className="font-medium text-gray-900">Create Shop</h4>
-                    <p className="text-sm text-gray-500">List your business</p>
+                    <h4 className="font-medium text-gray-900">{t(lang, 'createShop')}</h4>
+                    <p className="text-sm text-gray-500">{t(lang, 'listYourBusiness')}</p>
                   </button>
 
                   <button
@@ -218,8 +216,8 @@ const UserDashboard = () => {
                     className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                   >
                     <div className="text-3xl mb-2">✍️</div>
-                    <h4 className="font-medium text-gray-900">Write Review</h4>
-                    <p className="text-sm text-gray-500">Share your experience</p>
+                    <h4 className="font-medium text-gray-900">{t(lang, 'writeReview')}</h4>
+                    <p className="text-sm text-gray-500">{t(lang, 'shareYourExperience')}</p>
                   </button>
                 </div>
               </div>
@@ -227,7 +225,7 @@ const UserDashboard = () => {
 
             {activeTab === 'leaderboard' && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Contributors</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t(lang, 'topContributors')}</h3>
                 <div className="space-y-3">
                   {leaderboard.map((member, index) => (
                     <div
@@ -241,12 +239,12 @@ const UserDashboard = () => {
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{member.full_name}</h4>
                         <p className="text-sm text-gray-500">
-                          {member.review_count} reviews • {member.trust_score?.toFixed(1)}% trust score
+                          {member.review_count} {t(lang, 'reviews')} • {member.trust_score?.toFixed(1)}% trust score
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xl font-bold text-blue-600">{member.points_balance}</p>
-                        <p className="text-xs text-gray-500">points</p>
+                        <p className="text-xs text-gray-500">{t(lang, 'points')}</p>
                       </div>
                     </div>
                   ))}
@@ -256,34 +254,34 @@ const UserDashboard = () => {
 
             {activeTab === 'rewards' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Earn Points</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Earn {t(lang, 'points')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-2xl">✍️</span>
-                      <h4 className="font-medium text-gray-900">Write a Review</h4>
+                      <h4 className="font-medium text-gray-900">{t(lang, 'writeReview')}</h4>
                     </div>
                     <p className="text-sm text-gray-600 mb-2">
-                      Share your shopping experience
+                      {t(lang, 'shareYourExperience')}
                     </p>
-                    <p className="text-xl font-bold text-blue-600">+10 points</p>
+                    <p className="text-xl font-bold text-blue-600">+10 {t(lang, 'points')}</p>
                   </div>
 
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-2xl">📸</span>
-                      <h4 className="font-medium text-gray-900">Add Evidence</h4>
+                      <h4 className="font-medium text-gray-900">Add {t(lang, 'evidence')}</h4>
                     </div>
                     <p className="text-sm text-gray-600 mb-2">
                       Include receipt or screenshot
                     </p>
-                    <p className="text-xl font-bold text-green-600">+25 points</p>
+                    <p className="text-xl font-bold text-green-600">+25 {t(lang, 'points')}</p>
                   </div>
                 </div>
 
                 <div className="p-4 bg-gray-100 rounded-lg">
                   <p className="text-sm text-gray-600">
-                    <strong>Your current balance:</strong> {user.points_balance || 0} points
+                    <strong>Your current balance:</strong> {user.points_balance || 0} {t(lang, 'points')}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Points will soon be redeemable for rewards and badges!

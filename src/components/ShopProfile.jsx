@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/lib/LanguageContext';
+import { t } from '@/lib/i18n';
 import TrustScoreDisplay from './TrustScoreDisplay';
 
 const ShopProfile = () => {
   const { shopId } = useParams();
   const navigate = useNavigate();
+  const { lang } = useLanguage();
   const [shop, setShop] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [isOwner, setIsOwner] = useState(false);
@@ -79,7 +82,7 @@ const ShopProfile = () => {
       const data = await response.json();
       setShop(data.shop);
       setEditing(false);
-      alert('Shop updated successfully!');
+      alert(t(lang, 'success') + '! Shop updated.');
     } catch (error) {
       console.error('Update error:', error);
       alert('Failed to update shop');
@@ -121,7 +124,7 @@ const ShopProfile = () => {
             onClick={() => navigate('/shops')}
             className="text-blue-600 hover:text-blue-700"
           >
-            Browse all shops
+            {t(lang, 'browseShops')}
           </button>
         </div>
       </div>
@@ -163,7 +166,7 @@ const ShopProfile = () => {
                     </span>
                     {shop.license_verified && (
                       <span className="flex items-center gap-1 text-green-600 font-medium">
-                        ✓ Verified License
+                        ✓ {t(lang, 'verified')} License
                       </span>
                     )}
                   </div>
@@ -174,7 +177,7 @@ const ShopProfile = () => {
                     onClick={() => setEditing(!editing)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    {editing ? 'Cancel' : 'Edit Shop'}
+                    {editing ? t(lang, 'cancel') : t(lang, 'edit')} Shop
                   </button>
                 )}
               </div>
@@ -183,7 +186,7 @@ const ShopProfile = () => {
                 <form onSubmit={handleUpdate} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
+                      {t(lang, 'description')}
                     </label>
                     <textarea
                       value={editForm.description || ''}
@@ -194,7 +197,7 @@ const ShopProfile = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Profile URL
+                      {t(lang, 'profileUrl')}
                     </label>
                     <input
                       type="url"
@@ -207,7 +210,7 @@ const ShopProfile = () => {
                     type="submit"
                     className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                   >
-                    Save Changes
+                    {t(lang, 'save')} Changes
                   </button>
                 </form>
               ) : (
@@ -235,14 +238,14 @@ const ShopProfile = () => {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Reviews ({reviews.length})
+                  {t(lang, 'reviews')} ({reviews.length})
                 </h2>
                 {!isOwner && (
                   <button
                     onClick={() => navigate(`/review/${shopId}`)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Write Review
+                    {t(lang, 'writeReview')}
                   </button>
                 )}
               </div>
@@ -275,7 +278,7 @@ const ShopProfile = () => {
                           <p className="text-gray-700 mb-2">{review.review_text}</p>
                           {review.is_verified && (
                             <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                              ✓ Verified Purchase
+                              ✓ {t(lang, 'verifiedPurchase')}
                             </span>
                           )}
                         </div>
