@@ -153,65 +153,105 @@ const Profile = () => {
             <div className="relative">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors group"
+                className="p-3 bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl transition-all shadow-sm hover:shadow-md group"
               >
-                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="5" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="12" cy="19" r="2" />
                 </svg>
               </button>
 
               {/* Settings Dropdown Menu */}
               {showSettings && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      setShowEditModal(true);
-                      setShowSettings(false);
-                    }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                  >
-                    <span className="text-xl">✏️</span>
-                    <div>
-                      <p className="font-semibold text-gray-900">Edit Profile</p>
-                      <p className="text-xs text-gray-500">Update your info</p>
-                    </div>
-                  </button>
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowSettings(false)}
+                  ></div>
 
-                  <button
-                    onClick={() => navigate('/settings')}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                  >
-                    <span className="text-xl">⚙️</span>
-                    <div>
-                      <p className="font-semibold text-gray-900">Settings</p>
-                      <p className="text-xs text-gray-500">Preferences & privacy</p>
+                  {/* Dropdown */}
+                  <div className="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Header */}
+                    <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</p>
                     </div>
-                  </button>
 
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                  >
-                    <span className="text-xl">📊</span>
-                    <div>
-                      <p className="font-semibold text-gray-900">Dashboard</p>
-                      <p className="text-xs text-gray-500">View your stats</p>
+                    {/* Menu Items */}
+                    <div className="py-2">
+                      <button
+                        onClick={() => {
+                          setShowEditModal(true);
+                          setShowSettings(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 flex items-center gap-4 transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <span className="text-xl">✏️</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 text-sm">Edit Profile</p>
+                          <p className="text-xs text-gray-500">Update your info</p>
+                        </div>
+                        <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          navigate('/settings');
+                          setShowSettings(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 flex items-center gap-4 transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <span className="text-xl">⚙️</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 text-sm">Settings</p>
+                          <p className="text-xs text-gray-500">Preferences & privacy</p>
+                        </div>
+                        <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          navigate('/dashboard');
+                          setShowSettings(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 flex items-center gap-4 transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <span className="text-xl">📊</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 text-sm">Dashboard</p>
+                          <p className="text-xs text-gray-500">View your stats</p>
+                        </div>
+                        <span className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      </button>
                     </div>
-                  </button>
 
-                  <hr className="my-2 border-gray-200" />
+                    {/* Divider */}
+                    <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
 
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-3 text-left hover:bg-red-50 flex items-center gap-3 transition-colors text-red-600"
-                  >
-                    <span className="text-xl">🚪</span>
-                    <div>
-                      <p className="font-semibold">Logout</p>
-                      <p className="text-xs">Sign out of your account</p>
+                    {/* Logout */}
+                    <div className="py-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-3 text-left hover:bg-red-50 flex items-center gap-4 transition-all group"
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <span className="text-xl">🚪</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-red-600 text-sm">Logout</p>
+                          <p className="text-xs text-red-400">Sign out of account</p>
+                        </div>
+                      </button>
                     </div>
-                  </button>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
