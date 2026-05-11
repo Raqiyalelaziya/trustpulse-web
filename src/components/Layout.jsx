@@ -58,13 +58,9 @@ const Layout = ({ children }) => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <img 
-                src="/favicon.svg" 
+                src="/src/assets/shield.png" 
                 alt="TrustPulse" 
-                className="w-12 h-12 drop-shadow-lg"
-                onError={(e) => {
-                  // Fallback if logo not found
-                  e.target.style.display = 'none';
-                }}
+                className="w-12 h-12 drop-shadow-lg rounded-lg"
               />
               <div>
                 <h1 className="text-xl font-bold text-white">TrustPulse</h1>
@@ -134,20 +130,29 @@ const Layout = ({ children }) => {
               {/* Language Toggle */}
               <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1">
                 <button
-                  onClick={() => setLang('en')}
-                  className={`px-3 py-1 rounded text-xs font-bold transition-all ${
-                    lang === 'en' ? 'bg-white text-purple-900' : 'text-white'
+                  onClick={() => {
+                    setLang('en');
+                    localStorage.setItem('language', 'en');
+                    window.location.reload(); // Reload to apply language change
+                  }}
+                  className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+                    lang === 'en' ? 'bg-white text-purple-900 shadow-lg' : 'text-white hover:bg-white/20'
                   }`}
                 >
-                  EN
+                  🇬🇧 EN
                 </button>
                 <button
-                  onClick={() => setLang('ar')}
-                  className={`px-3 py-1 rounded text-xs font-bold transition-all ${
-                    lang === 'ar' ? 'bg-white text-purple-900' : 'text-white'
+                  onClick={() => {
+                    setLang('ar');
+                    localStorage.setItem('language', 'ar');
+                    document.documentElement.dir = 'rtl';
+                    window.location.reload(); // Reload to apply language change
+                  }}
+                  className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${
+                    lang === 'ar' ? 'bg-white text-purple-900 shadow-lg' : 'text-white hover:bg-white/20'
                   }`}
                 >
-                  AR
+                  🇦🇪 AR
                 </button>
               </div>
 
