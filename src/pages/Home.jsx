@@ -77,11 +77,7 @@ const Home = () => {
             <div>
               {/* UAE Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full mb-6">
-                <span className="inline-block w-6 h-4 rounded-sm overflow-hidden shadow-sm">
-                  <span className="block h-[5px] bg-red-600"></span>
-                  <span className="block h-[5px] bg-white"></span>
-                  <span className="block h-[6px] bg-black"></span>
-                </span>
+                🇦🇪
                 <span className="text-sm font-medium text-white">Proudly serving the UAE</span>
               </div>
 
@@ -166,11 +162,7 @@ const Home = () => {
                 <div className="col-span-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-slate-300 text-sm font-medium">Total Shops Listed</p>
-                    <span className="inline-block w-8 h-5 rounded-sm overflow-hidden">
-                      <span className="block h-[6.66px] bg-red-600"></span>
-                      <span className="block h-[6.66px] bg-white"></span>
-                      <span className="block h-[6.66px] bg-black"></span>
-                    </span>
+                    🇦🇪
                   </div>
                   <p className="text-5xl font-bold text-white mb-2">{stats.shops}</p>
                   <p className="text-emerald-400 text-sm font-medium flex items-center gap-1">
@@ -383,11 +375,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 lg:p-16 relative overflow-hidden">
             {/* UAE Flag accent */}
-            <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 opacity-10">
-              <div className="w-full h-1/3 bg-red-600"></div>
-              <div className="w-full h-1/3 bg-white"></div>
-              <div className="w-full h-1/3 bg-black"></div>
-            </div>
+            
 
             <div className="relative max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full mb-6">
@@ -431,11 +419,7 @@ const Home = () => {
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <h3 className="text-xl font-bold text-white">TrustPulse</h3>
-                <span className="inline-block w-5 h-3 rounded-sm overflow-hidden">
-                  <span className="block h-1 bg-red-600"></span>
-                  <span className="block h-1 bg-white"></span>
-                  <span className="block h-1 bg-black"></span>
-                </span>
+                🇦🇪
               </div>
               <p className="text-sm leading-relaxed max-w-md">
                 The UAE's trusted platform for verified shop reviews. Helping buyers make informed decisions across Instagram, TikTok, and social media shops.
@@ -464,11 +448,7 @@ const Home = () => {
           <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
             <p>© 2026 TrustPulse. All rights reserved.</p>
             <div className="flex items-center gap-2">
-              <span className="inline-block w-5 h-3 rounded-sm overflow-hidden">
-                <span className="block h-1 bg-red-600"></span>
-                <span className="block h-1 bg-white"></span>
-                <span className="block h-1 bg-black"></span>
-              </span>
+              🇦🇪
               <span>Made in the UAE</span>
             </div>
           </div>

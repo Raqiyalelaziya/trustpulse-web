@@ -74,11 +74,7 @@ const Layout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5">
-              <span className="inline-block w-4 h-3 rounded-sm overflow-hidden shadow-sm">
-                <span className="block h-1 bg-red-600"></span>
-                <span className="block h-1 bg-white"></span>
-                <span className="block h-1 bg-black"></span>
-              </span>
+              <span className="text-base">🇦🇪</span>
               <span className="font-medium">United Arab Emirates</span>
             </span>
             <span className="hidden md:inline text-slate-400">|</span>
@@ -107,11 +103,7 @@ const Layout = ({ children }) => {
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold text-slate-900 tracking-tight">TrustPulse</h1>
-                  <span className="inline-block w-5 h-3 rounded-sm overflow-hidden shadow-sm border border-slate-200">
-                    <span className="block h-1 bg-red-600"></span>
-                    <span className="block h-1 bg-white"></span>
-                    <span className="block h-1 bg-black"></span>
-                  </span>
+                  <span className="text-base">🇦🇪</span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium tracking-wide">UAE VERIFIED REVIEWS</p>
               </div>
