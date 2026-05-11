@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/lib/LanguageContext';
 import shieldLogo from '@/assets/shield.png';
+import UAEFlag from '@/components/UAEFlag';
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const Layout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5">
-              <span className="text-base">🇦🇪</span>
+              <UAEFlag className="w-5 h-3.5" />
               <span className="font-medium">United Arab Emirates</span>
             </span>
             <span className="hidden md:inline text-slate-400">|</span>
@@ -91,19 +92,19 @@ const Layout = ({ children }) => {
       {/* Main Navbar */}
       <nav className={`bg-white sticky top-0 z-40 transition-all ${scrolled ? 'shadow-md' : 'shadow-sm'} border-b border-slate-200`}>
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-24">
             
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img 
                 src={shieldLogo}
                 alt="TrustPulse" 
-                className="w-12 h-12 object-contain group-hover:scale-105 transition-transform"
+                className="w-16 h-16 object-contain group-hover:scale-105 transition-transform"
               />
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl font-bold text-slate-900 tracking-tight">TrustPulse</h1>
-                  <span className="text-base">🇦🇪</span>
+                  <UAEFlag className="w-6 h-4" />
                 </div>
                 <p className="text-xs text-slate-500 font-medium tracking-wide">UAE VERIFIED REVIEWS</p>
               </div>
