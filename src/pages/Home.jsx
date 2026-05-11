@@ -1,260 +1,334 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { api } from '../api'
-import { ShieldCheck, Star, ArrowRight, TrendingUp, Users, Store, Search } from 'lucide-react'
-import ShopCard from '../components/ShopCard'
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-const categories = [
-  { name: 'Fashion',     emoji: '👗' },
-  { name: 'Beauty',      emoji: '💄' },
-  { name: 'Electronics', emoji: '📱' },
-  { name: 'Accessories', emoji: '👜' },
-  { name: 'Home',        emoji: '🏠' },
-  { name: 'Food',        emoji: '🍽️' },
-  { name: 'Perfume',     emoji: '🌸' },
-  { name: 'Handmade',    emoji: '🤝' },
-  { name: 'Health',      emoji: '💚' },
-  { name: 'Sports',      emoji: '⚽' },
-]
-
-// UAE Flag SVG component
-function UAEFlag({ className = '' }) {
-  return (
-    <svg viewBox="0 0 60 30" className={className} xmlns="http://www.w3.org/2000/svg">
-      {/* Green stripe */}
-      <rect x="0" y="0" width="60" height="10" fill="#00732F" />
-      {/* White stripe */}
-      <rect x="0" y="10" width="60" height="10" fill="#FFFFFF" />
-      {/* Black stripe */}
-      <rect x="0" y="20" width="60" height="10" fill="#000000" />
-      {/* Red vertical bar */}
-      <rect x="0" y="0" width="20" height="30" fill="#FF0000" />
-    </svg>
-  )
-}
-
-export default function Home() {
-  const [shops,   setShops]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search,  setSearch]  = useState('')
+const Home = () => {
+  const navigate = useNavigate();
+  const [shops, setShops] = useState([]);
+  const [stats, setStats] = useState({ shops: 0, reviews: 0, verified: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
-    api.getShops().then(data => {
-      setShops(Array.isArray(data) ? data : [])
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
+    fetchStats();
+    fetchShops();
+    
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const totalReviews  = shops.reduce((a, s) => a + (s.review_count || 0), 0)
-  const verifiedShops = shops.filter(s => s.license_verified).length
-  const topShops      = [...shops].sort((a, b) => (b.trust_score || 0) - (a.trust_score || 0)).slice(0, 6)
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('https://trustpulse-api.onrender.com/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const fetchShops = async () => {
+    try {
+      const response = await fetch('https://trustpulse-api.onrender.com/shops?limit=6');
+      if (response.ok) {
+        const data = await response.json();
+        setShops(data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const categories = [
+    { name: 'Fashion', emoji: '👗', icon: '🛍️', color: 'from-pink-400 to-red-500' },
+    { name: 'Beauty', emoji: '💄', icon: '✨', color: 'from-purple-400 to-pink-500' },
+    { name: 'Electronics', emoji: '📱', icon: '⚡', color: 'from-blue-400 to-purple-500' },
+    { name: 'Accessories', emoji: '💍', icon: '✨', color: 'from-orange-400 to-yellow-500' },
+    { name: 'Home', emoji: '🏠', icon: '🛋️', color: 'from-green-400 to-blue-500' },
+    { name: 'Food', emoji: '🍔', icon: '🍽️', color: 'from-red-400 to-orange-500' },
+    { name: 'Perfume', emoji: '💐', icon: '🌸', color: 'from-pink-400 to-purple-500' },
+    { name: 'Handmade', emoji: '🎨', icon: '🖌️', color: 'from-indigo-400 to-purple-500' },
+    { name: 'Health', emoji: '💚', icon: '⚕️', color: 'from-green-400 to-emerald-500' },
+    { name: 'Sports', emoji: '⚽', icon: '🏃', color: 'from-blue-400 to-cyan-500' },
+  ];
 
   return (
-    <div className="space-y-14">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+      
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-40 left-1/2 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
 
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <div className="relative rounded-3xl overflow-hidden min-h-[340px] flex items-center">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-        {/* UAE flag colour bands */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#00732F]" />
-          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-[#000000]" />
-          <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-[#FF0000]" />
-        </div>
-        {/* Dot grid */}
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-        />
-        {/* Glow */}
-        <div className="absolute inset-0 opacity-20"
-          style={{ backgroundImage: 'radial-gradient(ellipse at 30% 50%, rgba(0,115,47,0.4), transparent 60%), radial-gradient(ellipse at 80% 30%, rgba(255,0,0,0.2), transparent 50%)' }}
-        />
+      {/* Content */}
+      <div className="relative z-10">
+        
+        {/* HERO SECTION */}
+        <section className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
+          <div className="max-w-6xl mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              
+              {/* Left: Text Content */}
+              <div className="text-center lg:text-left animate-fade-in">
+                <div className="inline-block mb-6">
+                  <span className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-bold flex items-center gap-2 w-fit mx-auto lg:mx-0">
+                    <span className="animate-spin text-lg">🇦🇪</span>
+                    UAE SOCIAL SHOPS
+                  </span>
+                </div>
 
-        <div className="relative px-8 md:px-12 py-12 w-full">
-          <div className="max-w-2xl space-y-6">
-            {/* UAE badge */}
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5">
-              <UAEFlag className="w-8 h-4 rounded-sm overflow-hidden" />
-              <span className="text-white/80 text-xs font-semibold uppercase tracking-widest">UAE Social Shops</span>
-            </div>
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4 leading-tight">
+                  Shop <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600">Smarter.</span>
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">Trust Verified.</span>
+                </h1>
 
-            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight">
-              Shop Smarter.<br />
-              <span className="bg-gradient-to-r from-[#00732F] via-emerald-400 to-[#00732F] bg-clip-text text-transparent">
-                Trust Verified.
-              </span>
-            </h1>
+                <p className="text-xl text-gray-300 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                  Real reviews from real buyers across the UAE. Discover trustworthy Instagram, TikTok and social media shops — before you buy.
+                </p>
 
-            <p className="text-white/60 text-lg max-w-lg">
-              Real reviews from real buyers across the UAE. Discover trustworthy Instagram, TikTok and social media shops — before you buy.
-            </p>
+                {/* Search Bar */}
+                <form onSubmit={handleSearch} className="mb-8 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto lg:mx-0">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search shops, sellers, categories..."
+                      className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl font-bold hover:shadow-2xl transition-all hover:scale-105 flex items-center gap-2 justify-center"
+                  >
+                    <span>Search</span>
+                  </button>
+                </form>
 
-            {/* Search bar */}
-            <form
-              onSubmit={(e) => { e.preventDefault(); if (search.trim()) window.location.href = `/search?q=${search}` }}
-              className="flex gap-2 max-w-lg"
-            >
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search shops…"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-sm outline-none focus:border-white/40 focus:bg-white/15 transition-all"
-                />
+                {/* CTAs */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <Link
+                    to="/search"
+                    className="px-8 py-3 bg-white text-slate-900 rounded-2xl font-bold hover:shadow-2xl transition-all hover:scale-105 flex items-center gap-2 justify-center"
+                  >
+                    <span>📖</span> Browse Shops
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold hover:shadow-2xl transition-all hover:scale-105 flex items-center gap-2 justify-center"
+                  >
+                    <span>⭐</span> Join Free
+                  </Link>
+                </div>
               </div>
-              <button
-                type="submit"
-                className="px-6 py-3.5 bg-[#00732F] hover:bg-[#005a25] text-white font-semibold rounded-2xl transition-colors text-sm"
-              >
-                Search
-              </button>
-            </form>
 
-            <div className="flex items-center gap-4 flex-wrap">
-              <Link
-                to="/search"
-                className="flex items-center gap-2 bg-white text-slate-900 px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/90 transition-colors"
-              >
-                <Store className="h-4 w-4" /> Browse Shops
-              </Link>
-              <Link
-                to="/signup"
-                className="flex items-center gap-2 border border-white/30 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-white/10 transition-colors"
-              >
-                Join Free <ArrowRight className="h-4 w-4" />
-              </Link>
+              {/* Right: Animated Stats */}
+              <div className="hidden lg:block">
+                <div className="space-y-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                  {[
+                    { icon: '📦', stat: stats.shops || 36, label: 'Shops Listed', color: 'from-blue-500 to-cyan-500' },
+                    { icon: '⭐', stat: stats.reviews || 42, label: 'Total Reviews', color: 'from-yellow-400 to-orange-500' },
+                    { icon: '✅', stat: stats.verified || 23, label: 'Verified Shops', color: 'from-green-400 to-emerald-500' }
+                  ].map((item, i) => (
+                    <div key={i} className={`bg-gradient-to-br ${item.color} rounded-3xl p-6 shadow-2xl transform hover:scale-105 transition-all`}>
+                      <p className="text-white/80 text-sm font-semibold mb-2">{item.label}</p>
+                      <p className="text-5xl font-black text-white">{item.stat}</p>
+                      <p className="text-4xl absolute bottom-4 right-4 opacity-20">{item.icon}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Floating stats */}
-        <div className="absolute bottom-6 right-8 hidden md:flex flex-col gap-2">
-          {[
-            { label: 'Shops',    value: shops.length,  color: 'text-emerald-400' },
-            { label: 'Reviews',  value: totalReviews,  color: 'text-blue-400' },
-            { label: 'Verified', value: verifiedShops, color: 'text-amber-400' },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-right backdrop-blur-sm">
-              <p className={`text-xl font-black ${stat.color}`}>{stat.value}</p>
-              <p className="text-white/40 text-[10px] uppercase tracking-wider">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Stats strip ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { icon: Store,      label: 'Shops Listed',    value: shops.length,  color: 'text-primary',  bg: 'bg-primary/5' },
-          { icon: Star,       label: 'Total Reviews',   value: totalReviews,  color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/20' },
-          { icon: ShieldCheck,label: 'Verified Shops',  value: verifiedShops, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/20' },
-        ].map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className={`${bg} rounded-2xl border border-border/50 p-5 text-center`}>
-            <Icon className={`h-6 w-6 mx-auto mb-2 ${color}`} />
-            <p className={`text-3xl font-black font-heading ${color}`}>{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Categories ────────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-2xl font-black">Browse by Category</h2>
-          <Link to="/search" className="text-sm text-primary hover:underline flex items-center gap-1">
-            See all <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {categories.map(({ name, emoji }) => (
-            <Link
-              key={name}
-              to={`/search?category=${name}`}
-              className="group flex flex-col items-center gap-2 p-4 bg-card border border-border/50 rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-all hover:-translate-y-0.5"
-            >
-              <span className="text-2xl">{emoji}</span>
-              <span className="text-xs font-semibold text-muted-foreground group-hover:text-primary transition-colors">{name}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Top Shops ─────────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="font-heading text-2xl font-black">Top Trusted Shops</h2>
-            <div className="flex items-center gap-1.5 bg-[#00732F]/10 border border-[#00732F]/20 rounded-full px-3 py-1">
-              <UAEFlag className="w-5 h-3 rounded-sm" />
-              <span className="text-xs font-semibold text-[#00732F]">UAE</span>
-            </div>
-          </div>
-          <Link to="/search" className="text-sm text-primary hover:underline flex items-center gap-1">
-            View all <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-56 bg-card rounded-2xl border border-border/50 animate-pulse" />
+        {/* Stats on Mobile */}
+        <section className="lg:hidden px-4 py-8">
+          <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+            {[
+              { icon: '📦', stat: stats.shops || 36, label: 'Shops' },
+              { icon: '⭐', stat: stats.reviews || 42, label: 'Reviews' },
+              { icon: '✅', stat: stats.verified || 23, label: 'Verified' }
+            ].map((item, i) => (
+              <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-all">
+                <p className="text-3xl mb-2">{item.icon}</p>
+                <p className="text-2xl font-black text-white">{item.stat}</p>
+                <p className="text-xs text-gray-400">{item.label}</p>
+              </div>
             ))}
           </div>
-        ) : topShops.length === 0 ? (
-          <div className="text-center py-20 space-y-3">
-            <div className="text-5xl">🏪</div>
-            <p className="text-muted-foreground">No shops yet — check back soon!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {topShops.map((shop) => <ShopCard key={shop.id} shop={shop} />)}
-          </div>
-        )}
-      </div>
+        </section>
 
-      {/* ── UAE Trust Banner ──────────────────────────────────────────── */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 to-slate-800 p-8 md:p-12">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }}
-        />
-        {/* UAE stripe accents */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF0000] via-[#FFFFFF] to-[#00732F]" />
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00732F] via-[#FFFFFF] to-[#FF0000]" />
-
-        <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-3 text-center md:text-left">
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <UAEFlag className="w-10 h-6 rounded-md overflow-hidden" />
-              <span className="text-white/60 text-sm font-semibold uppercase tracking-widest">Built for UAE Shoppers</span>
+        {/* CATEGORIES SECTION */}
+        <section className="px-4 py-16">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-black text-white mb-2">Browse by Category</h2>
+                <p className="text-gray-400">Explore verified shops in your favorite categories</p>
+              </div>
+              <Link to="/search" className="text-purple-400 font-bold hover:text-purple-300 transition-all flex items-center gap-2">
+                See all <span>→</span>
+              </Link>
             </div>
-            <h2 className="font-heading text-3xl font-black text-white">
-              Join thousands of UAE<br />shoppers buying with confidence
-            </h2>
-            <p className="text-white/50 text-sm max-w-md">
-              TrustPulse helps you verify UAE social media shops before purchasing. Real reviews, verified ratings, and transparent trust scores.
-            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {categories.map((cat, i) => (
+                <Link
+                  key={i}
+                  to={`/search?category=${encodeURIComponent(cat.name)}`}
+                  className={`bg-gradient-to-br ${cat.color} rounded-3xl p-6 text-white hover:scale-110 transition-all duration-300 transform hover:shadow-2xl group cursor-pointer`}
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <div className="text-5xl mb-3 group-hover:scale-125 transition-transform">{cat.emoji}</div>
+                  <p className="font-bold text-lg">{cat.name}</p>
+                  <p className="text-white/70 text-sm">Browse {cat.name.toLowerCase()}</p>
+                </Link>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col gap-3 shrink-0">
-            <Link
-              to="/signup"
-              className="flex items-center justify-center gap-2 bg-[#00732F] hover:bg-[#005a25] text-white px-8 py-4 rounded-2xl font-bold transition-colors"
-            >
-              <Users className="h-5 w-5" />
-              Create Free Account
-            </Link>
-            <Link
-              to="/search"
-              className="flex items-center justify-center gap-2 border border-white/20 text-white px-8 py-4 rounded-2xl font-bold hover:bg-white/10 transition-colors"
-            >
-              <TrendingUp className="h-5 w-5" />
-              Browse Top Shops
-            </Link>
+        </section>
+
+        {/* FEATURED SHOPS */}
+        {shops.length > 0 && (
+          <section className="px-4 py-16">
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-10">
+                <h2 className="text-4xl md:text-5xl font-black text-white mb-2">Featured Shops</h2>
+                <p className="text-gray-400">Highly rated shops from our community</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {shops.slice(0, 6).map((shop, i) => (
+                  <Link
+                    key={i}
+                    to={`/shops/${shop.id}`}
+                    className="group bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 hover:bg-white/10 hover:border-white/20 transition-all hover:scale-105 hover:shadow-2xl"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                        {shop.icon || '🏪'}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, s) => (
+                          <span key={s} className={s < (shop.average_rating || 4) ? 'text-yellow-400' : 'text-gray-600'}>★</span>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-2">{shop.shop_name}</h3>
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">{shop.description || 'Verified shop'}</p>
+                    
+                    <div className="flex gap-2 mb-4">
+                      {shop.verified && <span className="text-xs bg-green-500/30 text-green-300 px-3 py-1 rounded-full font-semibold flex items-center gap-1">✅ Verified</span>}
+                      <span className="text-xs bg-blue-500/30 text-blue-300 px-3 py-1 rounded-full font-semibold">{shop.review_count || 0} reviews</span>
+                    </div>
+
+                    <button className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition-all group-hover:scale-105">
+                      View Shop
+                    </button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* CTA SECTION */}
+        <section className="px-4 py-20">
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 rounded-4xl p-12 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full -ml-20 -mt-20"></div>
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mb-20"></div>
+            
+            <div className="relative">
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-4">Ready to Shop Smart?</h2>
+              <p className="text-xl text-white/90 mb-8">Join thousands of UAE buyers making smarter shopping decisions</p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to="/search"
+                  className="px-8 py-4 bg-white text-purple-600 rounded-2xl font-bold hover:shadow-2xl transition-all hover:scale-105"
+                >
+                  Start Browsing
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-8 py-4 bg-white/20 text-white rounded-2xl font-bold border border-white/30 hover:bg-white/30 transition-all hover:scale-105"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* Footer-like Section */}
+        <section className="px-4 py-16 border-t border-white/10">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
+              <div>
+                <h3 className="text-2xl font-black text-white mb-4">🛡️ Trust & Safety</h3>
+                <p className="text-gray-400">Every shop is verified by our community of real buyers</p>
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-white mb-4">⭐ Real Reviews</h3>
+                <p className="text-gray-400">Honest feedback from actual customers shopping across UAE</p>
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-white mb-4">🚀 Smart Shopping</h3>
+                <p className="text-gray-400">Make informed decisions with verified shop ratings</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(40px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out forwards;
+        }
+        
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out forwards;
+        }
+      `}</style>
     </div>
-  )
-}
+  );
+};
+
+export default Home;

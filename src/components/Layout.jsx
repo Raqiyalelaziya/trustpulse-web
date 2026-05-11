@@ -58,7 +58,7 @@ const Layout = ({ children }) => {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <img 
-                src="/src/assets/shield.png" 
+                src="/assets/shield.png" 
                 alt="TrustPulse" 
                 className="w-12 h-12 drop-shadow-lg rounded-lg"
               />
